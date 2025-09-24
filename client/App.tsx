@@ -21,15 +21,11 @@ import AuthCliPage from "./pages/AuthCliPage";
 import { Layout } from "./components/Layout/Layout";
 
 // live chat imports
-import { Toaster } from "react-hot-toast";
 import { ChatPage } from "@/pages/ChatPage";
 import { ContextProvider } from "./context/Context";
 import { InviteNotification } from "@/components/InviteNotification";
 import { TournamentInviteCards } from "@/components/TournamentInviteCards";
 import { CliNavigator } from "@/components/CliNavigator";
-import { VerticalSidebar } from "@/components/VerticalSidebar";
-import { SidebarProvider } from "@/components/SidebarProvider";
-import { Header } from "@/components/Header";
 import "@/conf/i18n";
 import { useEffect, useState } from "react";
 import { useStore } from "./store/useStore";
@@ -46,7 +42,9 @@ const App = () => {
       return;
     }
 
-    socket.on("receive_message", (msg) => addMessage(msg));
+    socket.on("receive_message", (msg) => {
+      addMessage(msg);
+    });
 
     return () => {
       socket.off("receive_message");
@@ -71,7 +69,7 @@ const App = () => {
                   path="/remotesettings"
                   element={<RemoteSettingsPage />}
                 />
-                <Route path="/chat" element={<ChatPage />} />
+                <Route path="/chat" element={<ChatPage />}/>
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/prof" element={<ProfilePage />} />
                 <Route path="/playerstats" element={<PlayerStatsPage />} />
@@ -89,7 +87,6 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
-          <Toaster />
           <InviteNotification />
           <TournamentInviteCards />
           <CliNavigator />

@@ -90,17 +90,20 @@ export const Input = ({ disabled }) => {
           } placeholder-[#D1D1D1] w-full focus:outline-none bg-transparent`}
           placeholder={`${disabled ? "disabled" : "your message"}`}
         />
-        <button
-          onClick={handleSendMessage}
-          className={`flex-shrink-0 ${disabled ? "opacity-50" : ""}`}
-          disabled={disabled}
-        >
-          <img
-            src={send}
-            alt="send"
-            className="size-[29px]"
-          />
-        </button>
+
+        <div className="flex items-center justify-center ">
+          <button
+            onClick={handleSendMessage}
+            className={`flex-shrink-0  ${disabled ? "opacity-50" : ""}`}
+            disabled={disabled}
+          >
+            <img
+              src={send}
+              alt="send"
+              className="size-[29px]"
+            />
+          </button>
+        </div>
       </div>
     </div>
   );

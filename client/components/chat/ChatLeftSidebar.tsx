@@ -138,15 +138,15 @@ export const ChatLeftSidebar = () => {
         </div>
       </div>
 
-      <div className="bg-gray_3/80 rounded-[20px] overflow-y-auto scrollbar-hidden mt-[21px]">
+      <div className="bg-gray_3/80 rounded-[20px] overflow-y-auto scrollbar-hidden mt-[21px] h-full">
         <div
           className={`flex flex-col h-full w-full  gap-2 ${
             isLoading ? "items-center justify-center" : ""
           }`}
         >
           {isLoading ? (
-            <div className="flex items-center justify-center">
-              <div className="animate-spin rounded-full size-12 border-4 border-white/70 border-t-transparent"></div>
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-spin rounded-full size-8 border-4 border-white/70 border-t-transparent"></div>
             </div>
           ) : null}
           {filteredUsers.length === 0 && !isLoading ? (

@@ -82,12 +82,12 @@ export const registerSocketChatHandlers = (
 
       try {
         const newMessage = await createMessage({
-          sender_id: parseInt(senderId),
-          receiver_id: parseInt(receiverId),
+          sender_id: Number(senderId),
+          receiver_id: Number(receiverId),
           content: payload.content,
         });
         app.io.to(senderId).emit("receive_message", newMessage);
-        app.io.to(receiverId).emit("receive_message", newMessage);
+        app.io.to(String(receiverId)).emit("receive_message", newMessage);
       } catch (e: any) {
         socket.emit("error", `Failed to send message: ${e.message}`);
       }

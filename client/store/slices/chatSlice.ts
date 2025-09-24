@@ -91,7 +91,7 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (
         {
           id: message.id,
           sender_id: message.sender_id,
-          avatarurl: s.users[message.sender_id]?.avatarurl,
+          avatarurl: message.avatarurl,
           content: message.content,
           timestamp: message.timestamp,
         },

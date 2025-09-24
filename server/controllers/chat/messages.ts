@@ -41,6 +41,7 @@ interface Message {
   sender_id: number;
   receiver_id: number;
   content: string;
+  avatarurl: string;
   timestamp: string;
   conversation_id: number;
 }
@@ -80,13 +81,15 @@ export async function createMessage(
       sender_id,
       receiver_id,
       content,
-      conversationId
+      conversationId,
     );
+    const senderUser = await FindById(String(sender_id));
     const newMessage: Message = {
       id: messageResult.lastID,
       sender_id,
       receiver_id,
       content,
+      avatarurl: senderUser?.avatarurl,
       timestamp,
       conversation_id: conversationId,
     };
@@ -180,8 +183,12 @@ export const addLastRead = async (
     conversationId: string;
     userId: string;
   };
+      console.log("Adding last read for conversation:", conversationId, "user:", userId);
+      console.log("Adding last read for conversation:", conversationId, "user:", userId);
+      console.log("Adding last read for conversation:", conversationId, "user:", userId);
+
   try {
-    const row = await insertLastRead(conversationId, userId);
+    const row = await insertLastRead(Number(conversationId), Number(userId));
   } catch (err: any) {
     throw err;
   }

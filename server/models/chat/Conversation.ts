@@ -62,7 +62,7 @@ export const selectOneConversation = async (
         JOIN users u ON m.sender_id = u.id
         WHERE (sender_id = ? AND receiver_id = ?) 
            OR (sender_id = ? AND receiver_id = ?)
-        ORDER BY timestamp ASC
+        ORDER BY timestamp DESC
         LIMIT ? OFFSET ?;
       `,
       [sender_id, receiver_id, receiver_id, sender_id, limit, offset]
