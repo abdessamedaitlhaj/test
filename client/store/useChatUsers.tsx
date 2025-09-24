@@ -16,7 +16,7 @@ export const useChatUsers = () => {
       return response.data.users;
     },
     getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < 20) {
+      if (lastPage.length < CHAT_USERS_PAGE_SIZE) {
         return undefined;
       }
       return allPages.flat().length + 1;

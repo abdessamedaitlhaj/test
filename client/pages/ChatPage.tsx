@@ -16,6 +16,7 @@ export const ChatPage = () => {
   const [isTyping, setTyping] = useState(false);
   const [isBlocked, setBlocked] = useState(false);
   const [mobileView, setMobileView] = useState("");
+  const [startedSince, setStartedSince] = useState<Date | null>(null);
   
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export const ChatPage = () => {
         {selectedUser ? (
           <>
             <ChatMenu isBlocked={isBlocked} setBlocked={setBlocked} />
-            <ChatArea isBlocked={isBlocked} />
+            <ChatArea isBlocked={isBlocked} setStartedSince={setStartedSince} />
           </>
         ) : (
           <div className="flex flex-col gap-4 items-center justify-center h-full">
@@ -65,7 +66,7 @@ export const ChatPage = () => {
           </div>
         )}
       </div>
-      <ChatRightSidebar />
+      <ChatRightSidebar startedSince={startedSince} />
     </div>
   );
 };

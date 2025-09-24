@@ -5,8 +5,8 @@ import { useStore } from "@/store/useStore";
 import moment from "moment";
 import { MessageCircleWarning } from "lucide-react";
 
-export const ChatRightSidebar = () => {
-  const { selectedUser, setSelectedUser, conversation } = useStore();
+export const ChatRightSidebar = ({ startedSince }) => {
+  const { selectedUser, setSelectedUser } = useStore();
   const {
     data,
     fetchNextPage,
@@ -37,6 +37,19 @@ export const ChatRightSidebar = () => {
     ) : null;
   }
 
+  function formatStartedSince(startedSince: Date) {
+  const date = new Date(startedSince);
+
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const day = date.getDate().toString().padStart(2, '0');
+  const year = date.getFullYear();
+
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+
+  return `${month}/${day}/${year} ${hours}:${minutes}`;
+}
+
   return (
     <div className="flex flex-col space-y-[32px] h-[829px] w-[295px]">
       {selectedUser && (
@@ -46,14 +59,14 @@ export const ChatRightSidebar = () => {
           </span>
           <div className="flex flex-col p-4 w-full space-y-4">
             <div className="">
-              <span className=" text-xs     w-[250px] h-[17px]">
+              <span className=" text-[14px] w-[250px] h-[17px]">
                 Conversation started
               </span>
             </div>
-            {false ? (
-              <div className="self-end bg-green-300 w-full">
-                <span className=" bg-red-900 text-[14px] text-end w-full h-[17px]">
-                  {moment(startedOn).format("l")}
+            {startedSince ? (
+              <div className="flex w-full">
+                <span className="self-end text-[14px] text-end w-full h-[17px]">
+                  {formatStartedSince(startedSince)}
                 </span>
               </div>
             ) : (
@@ -84,7 +97,7 @@ export const ChatRightSidebar = () => {
             <div className="animate-spin rounded-full size-8 border-4 border-white/70 border-t-transparent"></div>
           </div>
         ) : allFriends?.length === 0 ? (
-          <div className="flex flex-col justify-center items-center text-white/80 space-y-4 p-4 h-full">
+          <div className="flex flex-col justify-center items-center text-white/70 space-y-4 p-4 h-full">
             <MessageCircleWarning size={40} />
             <span className=" text-[16px] w-115px] h-[19px] text-center">
               No friends available for chat!

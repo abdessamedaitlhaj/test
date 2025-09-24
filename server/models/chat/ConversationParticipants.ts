@@ -92,7 +92,7 @@ export const insertLastRead = async (
     SET last_read_message = ?
     WHERE conversation_id = ? AND user_id = ?
     `,
-      [new Date(), conversationId, userId]
+      [new Date().toISOString(), conversationId, userId]
     );
   } catch (err: any) {
     throw err;

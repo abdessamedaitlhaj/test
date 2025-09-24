@@ -63,14 +63,6 @@ export const ChatLeftSidebar = () => {
   const filteredUsers = allChatUsers?.filter(
     (u) => String(u.id) !== String(user?.id)
   );
-  // useEffect(() => {
-  //   if (allChatUsers && user?.id) {
-  //     const filteredUsers = allChatUsers?.filter(
-  //       (u) => String(u.id) !== String(user.id)
-  //     );
-  //     setUsers(filteredUsers);
-  //   }
-  // }, [allChatUsers, user?.id, setUsers]);
 
   const orderMap = new Map();
   conversationOrder.forEach((id, index) => {
@@ -138,9 +130,9 @@ export const ChatLeftSidebar = () => {
         </div>
       </div>
 
-      <div className="bg-gray_3/80 rounded-[20px] overflow-y-auto scrollbar-hidden mt-[21px] h-full">
+      <div className="bg-gray_3/80 rounded-[20px] overflow-y-auto scrollbar-hidden mt-[21px] h-full ">
         <div
-          className={`flex flex-col h-full w-full  gap-2 ${
+          className={`flex flex-col h-full w-full my-8 ${
             isLoading ? "items-center justify-center" : ""
           }`}
         >
@@ -151,8 +143,8 @@ export const ChatLeftSidebar = () => {
           ) : null}
           {filteredUsers.length === 0 && !isLoading ? (
             <div className="flex flex-col items-center justify-center gap-4 h-full">
-              <MessageCircleWarning className="text-white/70" size={50} />
-              <span className="text-white/70  text-center text-[16px] bg-green-400">
+              <MessageCircleWarning className="text-white/70" size={40} />
+              <span className="text-white/70  text-center text-[16px]">
                 No users available for chat!
               </span>
             </div>

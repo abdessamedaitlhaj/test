@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/App";
 import { useMessages } from "@/store/useMessages";
 
-export const ChatArea = ({ isBlocked }) => {
+export const ChatArea = ({ isBlocked, setStartedSince }) => {
   const { socket, user, selectedUser, conversation }: any = useStore();
   const { state } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -106,14 +106,9 @@ export const ChatArea = ({ isBlocked }) => {
   useEffect(() => {
     if (!selectedUser) return;
 
-  // const getAllMessagesForAUser = async () => {
-  //   const res = await api.get(`/messages/${selectedUser.id}`);
-  //   console.log("messages from the receiver : ", res.data);
-  // };
-  // getAllMessagesForAUser();
   const addLastRead = async () => {
     const lastMessage = allMessages[allMessages.length - 1];
-    console.log("Last message: ", lastMessage);
+
     if (!lastMessage) return;
 
     if (lastMessage.sender_id !== user?.id)
@@ -127,17 +122,18 @@ export const ChatArea = ({ isBlocked }) => {
   // const { id } = JSON.parse(
   //   allMessages[allMessages.length - 1]
   // );
-  }, [selectedUser]);
+  }, [selectedUser, allMessages]);
 
 
     const formatConversationStartedDate = (timestamp) => {
-    if (!timestamp) return "N/A";
+    if (!timestamp) return "Not started yet!";
     const date = new Date(timestamp);
     return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
   const conversationStartedDate = allMessages.length > 0 ? allMessages[0].timestamp : null;
-
+  setStartedSince(conversationStartedDate);
+  
   return (
     <>
       <div className="flex-1 overflow-y-auto  p-4 scrollbar-hidden">
@@ -166,7 +162,7 @@ export const ChatArea = ({ isBlocked }) => {
                         />
                         <h2 className="text-xl font-semibold text-white mb-2">{selectedUser.username}</h2>
                         <p className="text-white/70 text-sm">
-                            On {formatConversationStartedDate(conversationStartedDate)}
+                            {formatConversationStartedDate(conversationStartedDate)}
                         </p>
                     </div>
                 )
