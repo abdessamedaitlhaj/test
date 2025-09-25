@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { createMessage } from "../controllers/chat/messages.ts"; // This is the only import needed for saving
+import { createMessage, addLastRead } from "../controllers/chat/messages.ts"; // This is the only import needed for saving
 import { db } from "../db/db.ts";
 
 export const registerSocketChatHandlers = (
@@ -57,6 +57,7 @@ export const registerSocketChatHandlers = (
       sender_id: string;
       receiver_id: string;
       content: string;
+      selectedId: string;
     }) => {
       const senderId = payload.sender_id;
       const receiverId = payload.receiver_id;
@@ -86,6 +87,7 @@ export const registerSocketChatHandlers = (
           receiver_id: Number(receiverId),
           content: payload.content,
         });
+
         app.io.to(senderId).emit("receive_message", newMessage);
         app.io.to(String(receiverId)).emit("receive_message", newMessage);
       } catch (e: any) {

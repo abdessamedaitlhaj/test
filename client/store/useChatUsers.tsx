@@ -13,7 +13,7 @@ export const useChatUsers = () => {
     queryFn: async ({ pageParam }) => {
       const response = await api.get<{ users: User[] }>(
         `/users/chatUsers?limit=${CHAT_USERS_PAGE_SIZE}&offset=${pageParam}`);
-      return response.data.users;
+      return response.data.chatUsers;
     },
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.length < CHAT_USERS_PAGE_SIZE) {

@@ -12,24 +12,23 @@ interface User {
   last_seen: string;
 }
 
-export const ChatLeftSidebar = () => {
-  const {
-    data,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-    isLoading,
-    isError,
-    error,
-  } = useChatUsers();
+export const ChatLeftSidebar = ({ isLoading, hasNextPage, isFetchingNextPage, fetchNextPage }) => {
+  // const {
+  //   data,
+  //   hasNextPage,
+  //   fetchNextPage,
+  //   isFetchingNextPage,
+  //   isLoading,
+  //   isError,
+  //   error,
+  // } = useChatUsers();
 
-  const allChatUsers = data?.pages.flat() || [];
+  // const allChatUsers = data?.pages.flat() || [];
 
   const {
     user,
-    users,
+    chatUsers,
     updateUser,
-    setUsers,
     selectedUser,
     setOnlineUsers,
     setSelectedUser,
@@ -50,6 +49,8 @@ export const ChatLeftSidebar = () => {
     return () => clearInterval(interval);
   }, []);
 
+
+
   useEffect(() => {
     const currentSelectedUser = localStorage.getItem("selectedUser");
     if (currentSelectedUser) {
@@ -60,21 +61,9 @@ export const ChatLeftSidebar = () => {
     }
   }, [setSelectedUser]);
 
-  const filteredUsers = allChatUsers?.filter(
+  const filteredUsers = chatUsers?.filter(
     (u) => String(u.id) !== String(user?.id)
   );
-
-  const orderMap = new Map();
-  conversationOrder.forEach((id, index) => {
-    orderMap.set(id, index);
-  });
-
-  const sortedUsers = users.sort((a, b) => {
-    const indexA = orderMap.get(String(a.id)) ?? Infinity;
-    const indexB = orderMap.get(String(b.id)) ?? Infinity;
-
-    return indexA - indexB;
-  });
 
   const formatTimeDifference = (timestamp) => {
     const messageDate = new Date(timestamp);
@@ -114,7 +103,7 @@ export const ChatLeftSidebar = () => {
     };
   }, [socket, updateUser]);
 
-  if (isError) return <div>Error: {(error as Error).message}</div>;
+  // if (isError) return <div>Error: {(error as Error).message}</div>;
 
 
   return (

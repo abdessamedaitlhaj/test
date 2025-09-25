@@ -1,17 +1,28 @@
 import { StateCreator } from "zustand";
 import api from "@/utils/Axios";
-import { User } from "@/types/types";
 import { useMessages } from "../useMessages";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import type { User } from "../../types/types.ts"
 
 interface Message {
-  id?: number;
+  id: number;
   sender_id: number;
   receiver_id: number;
-  avatarurl?: string;
+  avatarurl: string;
   content: string;
   timestamp: string;
+}
+
+interface ChatUser {
+  id: string;
+  username: string;
+  avatarurl: string;
+  status: string;
+  last_seen: string;
+  unread_count: number;
+  last_message: string;
+  is_blocked: boolean;
 }
 
 interface Conversation {
@@ -23,13 +34,13 @@ interface Conversation {
 }
 
 export interface ChatSlice {
-  users: User[];
+  chatUsers: ChatUser[];
   messages: Message[];
   conversation: Conversation[];
   unreadCounts: Record<string, number>;
   conversationOrder: string[];
   selectedUser: User | null;
-  setUsers: (users: User[]) => void;
+  setChatUsers: (users: ChatUser[]) => void;
   updateUser: (userId: number, updates) => void;
   setMessages: (messages: Message[]) => void;
   setConversation: (conversation: Conversation[]) => void;
@@ -44,16 +55,16 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (
   set,
   get
 ) => ({
-  users: [],
+  chatUsers: [],
   messages: [],
   conversation: [],
   unreadCounts: {},
   conversationOrder: [],
   selectedUser: null,
-  setUsers: (users) => set({ users }),
+  setChatUsers: (users) => set({ chatUsers: users }),
   updateUser: (userId, updates) =>
     set((state) => ({
-      users: state.users.map((user) =>
+      chatUsers: state.chatUsers.map((user) =>
         String(user.id) === String(userId) ? { ...user, ...updates } : user
       ),
     })),

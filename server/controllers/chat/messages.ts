@@ -183,9 +183,6 @@ export const addLastRead = async (
     conversationId: string;
     userId: string;
   };
-      console.log("Adding last read for conversation:", conversationId, "user:", userId);
-      console.log("Adding last read for conversation:", conversationId, "user:", userId);
-      console.log("Adding last read for conversation:", conversationId, "user:", userId);
 
   try {
     const row = await insertLastRead(Number(conversationId), Number(userId));

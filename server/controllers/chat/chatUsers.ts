@@ -10,8 +10,8 @@ export const getChatUsers = async (request: any, reply: any) => {
   }
 
   try {
-    const users = await selectChatUsers(String(userId), limit, offset);
-    return reply.status(200).send({ users });
+    const chatUsers = await selectChatUsers(String(userId), limit, offset);
+    return reply.status(200).send({ chatUsers });
   } catch (error) {
     return reply.status(500).send({ error: "Failed to fetch chat users" });
   }

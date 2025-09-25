@@ -1,39 +1,10 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/store/useStore";
 import { useAuth } from "@/hooks/useAuth";
-import { space } from "postcss/lib/list";
 
 const STORAGE_KEY = "cliTokenInfo";
 
-// interface CliTokenInfo { token: string; expiresAt: number; issuedAt: number; socketId?: string; }
-
-// export default function AuthCliPage() {
-//   const { socket, isConnected } = useStore();
-//   const { state } = useAuth();
-//   const [info, setInfo] = useState<CliTokenInfo | null>(null);
-//   const [loading, setLoading] = useState(false);
-//   const [error, setError] = useState<string | null>(null);
-
-//   return (
-//     <div className="p-6 max-w-2xl mx-auto space-y-6 text-sm">
-//       <h1 className="text-xl font-bold">CLI Authorization</h1>
-//       <div className="bg-yellow-100 p-4 rounded border border-yellow-300 leading-relaxed">
-//         <p className="font-semibold mb-2">Disclaimer</p>
-//         <ul className="list-disc ms-5 space-y-1">
-//           <li>This CLI token grants limited control: matchmaking start, paddle movement, status.</li>
-//           <li>Token is bound to this browser tab's socket id. Closing or refreshing invalidates it.</li>
-//           <li>Only one active CLI token per user at a time. New authorization revokes the previous.</li>
-//           <li>Token lifetime: 1 hour. After expiry you must re-authorize.</li>
-//         </ul>
-//       </div>
-
-//       <div className="flex gap-4 items-center">
-
-//       </div>
-
-//     </div>
-//   );
-// }
+interface CliTokenInfo { token: string; expiresAt: number; issuedAt: number; socketId?: string; }
 
 const AuthCliPage = () => {
   const { socket, isConnected } = useStore();
@@ -47,11 +18,10 @@ const AuthCliPage = () => {
     if (info) {
       navigator.clipboard.writeText(info.token);
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000); // Reset after 2 seconds
+      setTimeout(() => setIsCopied(false), 2000);
     }
   };
 
-  // If socket disconnects while we have a token, invalidate locally so user can re-authorize.
   useEffect(() => {
     if (!isConnected && info) {
       localStorage.removeItem(STORAGE_KEY);
@@ -69,8 +39,6 @@ const AuthCliPage = () => {
     }
   }, []);
 
-  // Token is only considered valid if socket is currently connected.
-  // Token is only considered valid if socket is currently connected and not expired.
   const isTokenValid = !!(
     info &&
     info.socketId === socket?.id &&
@@ -79,7 +47,6 @@ const AuthCliPage = () => {
   );
   const [remainingMin, setRemainingMin] = useState(0);
 
-  // Timer effect: only runs when token is valid
   useEffect(() => {
     if (isTokenValid) {
       const update = () => {
@@ -92,7 +59,7 @@ const AuthCliPage = () => {
         }
       };
       update();
-      const interval = setInterval(update, 1000); // update every second for responsiveness
+      const interval = setInterval(update, 1000);
       return () => clearInterval(interval);
     } else {
       setRemainingMin(0);
@@ -130,7 +97,6 @@ const AuthCliPage = () => {
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newInfo));
       setInfo(newInfo);
-      // Emit join event for CLI socket to ensure matchmaking works
       if (socket && state.user?.user?.id) {
         socket.emit("join", state.user.user.id);
       }
@@ -158,7 +124,6 @@ const AuthCliPage = () => {
     }
   };
 
-  // Invalidate if socket id changed (reconnection with new id)
   useEffect(() => {
     if (info && socket?.id && info.socketId && info.socketId !== socket.id) {
       localStorage.removeItem(STORAGE_KEY);

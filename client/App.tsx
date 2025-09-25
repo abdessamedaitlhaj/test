@@ -21,6 +21,7 @@ import AuthCliPage from "./pages/AuthCliPage";
 import { Layout } from "./components/Layout/Layout";
 
 // live chat imports
+import { toast, ToastContainer } from "react-toastify";
 import { ChatPage } from "@/pages/ChatPage";
 import { ContextProvider } from "./context/Context";
 import { InviteNotification } from "@/components/InviteNotification";
@@ -33,8 +34,18 @@ import { ProfilePage } from "./pages/ProfilePage";
 
 export const queryClient = new QueryClient();
 
+interface Message {
+  id: number;
+  sender_id: number;
+  receiver_id: number;
+  avatarurl: string;
+  content: string;
+  timestamp: string;
+  conversation_id: number;
+}
+
 const App = () => {
-  const { socket, user, addMessage } = useStore();
+  const { socket, user, addMessage, selectedUser } = useStore();
 
   useEffect(() => {
     if (!socket || !user) {
@@ -42,14 +53,20 @@ const App = () => {
       return;
     }
 
-    socket.on("receive_message", (msg) => {
-      addMessage(msg);
+    socket.on("receive_message", (msg: Message) => {
+      if (
+    String(msg.sender_id) === String(user.id) ||
+    (String(msg.receiver_id) === String(user.id) && String(msg.sender_id) === String(selectedUser?.id))
+  ) {
+    toast("New Message");
+    addMessage(msg);
+  }
     });
 
     return () => {
       socket.off("receive_message");
     };
-  }, [socket, user]);
+  }, [socket, user, selectedUser, addMessage]);
 
   return (
     <ContextProvider>
@@ -90,6 +107,7 @@ const App = () => {
           <InviteNotification />
           <TournamentInviteCards />
           <CliNavigator />
+          <ToastContainer position="top-right" autoClose={3000} />
         </BrowserRouter>
       </QueryClientProvider>
     </ContextProvider>

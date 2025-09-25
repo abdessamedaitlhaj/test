@@ -30,7 +30,6 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
   allMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   //
 
-  console.log("All messages: ", allMessages);
   useEffect(() => {
     if (!selectedUser) return;
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -119,9 +118,6 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
 
   };
   addLastRead();
-  // const { id } = JSON.parse(
-  //   allMessages[allMessages.length - 1]
-  // );
   }, [selectedUser, allMessages]);
 
 

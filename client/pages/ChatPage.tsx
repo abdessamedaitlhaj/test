@@ -8,22 +8,30 @@ import { MessageSquare } from "lucide-react";
 import api from "@/utils/Axios";
 import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/App";
+import { useChatUsers } from "@/store/useChatUsers";
 
 
 export const ChatPage = () => {
-  const { selectedUser, loadConversation, socket, unreadCounts } = useStore();
+  const { selectedUser, socket, unreadCounts, setChatUsers } = useStore();
   const { state } = useAuth();
   const [isTyping, setTyping] = useState(false);
   const [isBlocked, setBlocked] = useState(false);
-  const [mobileView, setMobileView] = useState("");
   const [startedSince, setStartedSince] = useState<Date | null>(null);
-  
 
-  useEffect(() => {
-    if (window.innerWidth < 768) {
-      setMobileView("sidebar");
-    }
-  }, []);
+    const {
+    data,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    isLoading,
+    isError,
+    error,
+  } = useChatUsers();
+
+useEffect(() => {
+  const allChatUsers = data?.pages.flat() || [];
+  setChatUsers(allChatUsers);
+}, [data]);
 
   useEffect(() => {
     if (!selectedUser || !state?.user) return;
@@ -52,7 +60,7 @@ export const ChatPage = () => {
 
   return (
     <div className="flex h-[900px] gap-4 w-full">
-      <ChatLeftSidebar />
+      <ChatLeftSidebar isLoading={isLoading} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} fetchNextPage={fetchNextPage} />
       <div className="flex-1 bg-gray_3/80 rounded-[27px] flex flex-col w-[695px] h-[829px]">
         {selectedUser ? (
           <>

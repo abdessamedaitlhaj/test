@@ -16,7 +16,7 @@ export const useFriends = () => {
       return response.data.friends;
     },
     getNextPageParam: (lastPage, allPages) => {
-      if (lastPage.length < FRIENDS_PAGE_SIZE) {
+      if (!lastPage || lastPage.length < FRIENDS_PAGE_SIZE) {
         return undefined;
       }
       return allPages.flat().length + 1;
