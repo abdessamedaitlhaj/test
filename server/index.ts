@@ -108,6 +108,16 @@ export async function createServer() {
   await app.register(CliAuthRoutes, { prefix: "api/authcli" });
   await app.register(CliRoutes, { prefix: "api/cli" });
 
+  // Custom 404 Not Found Handler
+app.setNotFoundHandler((request, reply) => {
+  reply.status(404).send({
+    success: false,
+    message: 'Route Not Found',
+    path: request.url,
+    method: request.method
+  });
+});
+
   await app.register(fastifySocketIO, {
     cors: {
       origin: (origin, callback) => {

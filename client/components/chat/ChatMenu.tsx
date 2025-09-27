@@ -7,7 +7,7 @@ import menu from "../../../public/assests/menu.png";
 
 export const ChatMenu = ({ isBlocked, setBlocked }) => {
   const [isToggle, setToggle] = useState(false);
-  const { selectedUser } = useStore();
+  const { selectedUser, user } = useStore();
   const { state } = useAuth();
   const [isLoading, setLoading] = useState(false);
   // const [isBlocked, setBlocked] = useState(false);
@@ -67,9 +67,8 @@ export const ChatMenu = ({ isBlocked, setBlocked }) => {
       const res = await api.post(`/users/block/${selectedUser.id}`);
       setLoading(false);
       if (res.status === 200) {
-        toast(`User ${selectedUser.username} blocked successfully`);
         setBlocked(true);
-        socket.emit("block_user", selectedUser.id);
+        socket.emit("block_user", { userId: user.id, blockedId: selectedUser.id });
       }
     } catch (error) {
       console.error("Error blocking user:", error);
@@ -79,17 +78,17 @@ export const ChatMenu = ({ isBlocked, setBlocked }) => {
     }
     setToggle(!isToggle);
   };
-
+  
   const unblockUser = async () => {
     setLoading(true);
-
+    
     try {
       const res = await api.post(`/users/unblock/${selectedUser.id}`);
       setLoading(false);
       if (res.status === 200) {
         toast.success(`User ${selectedUser.username} unblocked successfully`);
         setBlocked(false);
-        socket.emit("unblock_user", selectedUser.id);
+        socket.emit("unblock_user", { userId: user.id, blockedId: selectedUser.id });
       }
     } catch (error) {
       console.error("Error unblocking user:", error);

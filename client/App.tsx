@@ -31,6 +31,7 @@ import "@/conf/i18n";
 import { useEffect, useState } from "react";
 import { useStore } from "./store/useStore";
 import { ProfilePage } from "./pages/ProfilePage";
+import api from "./utils/Axios";
 
 export const queryClient = new QueryClient();
 
@@ -45,7 +46,8 @@ interface Message {
 }
 
 const App = () => {
-  const { socket, user, addMessage, selectedUser } = useStore();
+  const { socket, user, addMessage, selectedUser, chatUsers, setChatUsers } =
+    useStore();
 
   useEffect(() => {
     if (!socket || !user) {
@@ -55,12 +57,16 @@ const App = () => {
 
     socket.on("receive_message", (msg: Message) => {
       if (
-    String(msg.sender_id) === String(user.id) ||
-    (String(msg.receiver_id) === String(user.id) && String(msg.sender_id) === String(selectedUser?.id))
-  ) {
-    toast("New Message");
-    addMessage(msg);
-  }
+        String(msg.sender_id) === String(user.id) ||
+        (String(msg.receiver_id) === String(user.id) &&
+          String(msg.sender_id) === String(selectedUser?.id))
+      ) {
+        toast("New Message");
+        addMessage(msg);
+        if (!chatUsers.find((u) => String(u.id) === String(msg.sender_id))) {
+          socket.emit("refresh_chat_users", msg.receiver_id);
+        }
+      }
     });
 
     return () => {
@@ -86,7 +92,7 @@ const App = () => {
                   path="/remotesettings"
                   element={<RemoteSettingsPage />}
                 />
-                <Route path="/chat" element={<ChatPage />}/>
+                <Route path="/chat" element={<ChatPage />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/prof" element={<ProfilePage />} />
                 <Route path="/playerstats" element={<PlayerStatsPage />} />

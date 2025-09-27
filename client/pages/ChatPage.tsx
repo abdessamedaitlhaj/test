@@ -10,7 +10,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/App";
 import { useChatUsers } from "@/store/useChatUsers";
 
-
 export const ChatPage = () => {
   const { selectedUser, socket, unreadCounts, setChatUsers } = useStore();
   const { state } = useAuth();
@@ -18,7 +17,7 @@ export const ChatPage = () => {
   const [isBlocked, setBlocked] = useState(false);
   const [startedSince, setStartedSince] = useState<Date | null>(null);
 
-    const {
+  const {
     data,
     hasNextPage,
     fetchNextPage,
@@ -28,10 +27,10 @@ export const ChatPage = () => {
     error,
   } = useChatUsers();
 
-useEffect(() => {
-  const allChatUsers = data?.pages.flat() || [];
-  setChatUsers(allChatUsers);
-}, [data]);
+  useEffect(() => {
+    const allChatUsers = data?.pages.flat() || [];
+    setChatUsers(allChatUsers);
+  }, [data]);
 
   useEffect(() => {
     if (!selectedUser || !state?.user) return;
@@ -58,9 +57,28 @@ useEffect(() => {
     queryClient.invalidateQueries({ queryKey: ["friends"] });
   }, [isBlocked]);
 
+  useEffect(() => {
+    socket.on("refresh_chat_users", (u) => {
+      queryClient.invalidateQueries({ queryKey: ["chatUsers"] });
+    });
+
+    return () => {
+      socket.off("refresh_chat_users");
+    };
+  }, [socket, setChatUsers]);
+
   return (
     <div className="flex h-[900px] gap-4 w-full">
-      <ChatLeftSidebar isLoading={isLoading} hasNextPage={hasNextPage} isFetchingNextPage={isFetchingNextPage} fetchNextPage={fetchNextPage} />
+      <ChatLeftSidebar
+        chatUsersData={{
+          hasNextPage,
+          fetchNextPage,
+          isFetchingNextPage,
+          isLoading,
+          isError,
+          error,
+        }}
+      />
       <div className="flex-1 bg-gray_3/80 rounded-[27px] flex flex-col w-[695px] h-[829px]">
         {selectedUser ? (
           <>

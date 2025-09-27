@@ -11,6 +11,7 @@ const Login = () => {
   };
   const { state, dispatch, setPersist, persist } = useAuth();
   const navigate = useNavigate();
+  const { socket } = useStore();
 
   const location = useLocation();
 
@@ -50,6 +51,7 @@ const Login = () => {
       setAuthToken(res.data.accessToken); 
       setUserData(res.data);
       setUser(res.data.user);
+      socket?.emit("user_online", res.data.user.id);
       navigate("/profile");
     } catch (err: any) {
       dispatch({ type: "Failed_Login", payload: err.response?.data?.message });

@@ -2,7 +2,7 @@ import { resolve } from "path";
 import { db } from "../db/db.ts";
 import { ensurePlayerStats } from "./PlayerStats";
 import { User } from "@/types/types.ts";
-import { dbAll } from "./dbHelpers.ts";
+import { dbAll, dbRun } from "./dbHelpers.ts";
 
 export const USER_STATUS = {
   ACTIVE: "in_game",
@@ -154,53 +154,88 @@ export const SearchByName = (username: string, id: string): Promise<User[]> => {
   });
 };
 
-export const selectChatUsers = async (id: string, limit: number, offset: number): Promise<User[]> => {
+export const selectChatUsers = async (
+  id: string,
+  limit: number,
+  offset: number
+): Promise<User[]> => {
   try {
-    // print limit and offset
     const users = await dbAll<User>(
       `
-		  SELECT
-			  DISTINCT u.id,
-			  u.username,
-			  u.avatarurl,
-			  u.status,
-			  u.last_seen,
-			  (
-				  SELECT COUNT(*)
-				  FROM messages m
-				  WHERE m.sender_id != ?
-				  AND m.conversation_id = cp.conversation_id
-				  AND m.timestamp > cp.last_read_message
-			  ) AS unread_count,
-			  (
-				SELECT m.content
-				FROM messages m
-				WHERE m.conversation_id = cp.conversation_id
-				ORDER BY m.timestamp DESC
-				LIMIT 1
-			  ) AS last_message,
-			  CASE
-				  WHEN b.blocked_user IS NOT NULL THEN TRUE -- Changed to TRUE for boolean output
-				  ELSE FALSE
-			  END AS is_blocked_by_me
-		  FROM
-			  users u
-		  JOIN
-			  conversation_participants cp ON u.id = cp.user_id
-		  LEFT JOIN
-			  blocked_users b ON u.id = b.blocked_user AND b.blocker_user = ?
-		  WHERE
-			  cp.conversation_id IN (
-				  SELECT conversation_id
-				  FROM conversation_participants
-				  WHERE user_id = ?
-			  )
-			  AND u.id != ?
-        LIMIT ? OFFSET ?;
+      SELECT
+          DISTINCT u.id,
+          u.username,
+          u.avatarurl,
+          u.status,
+          u.last_seen,
+          (
+              SELECT COUNT(*)
+              FROM messages m
+              WHERE m.sender_id != ?
+              AND m.conversation_id = cp.conversation_id
+              AND m.timestamp > cp.last_read_message
+          ) AS unread_count,
+          (
+              SELECT m.content
+              FROM messages m
+              WHERE m.conversation_id = cp.conversation_id
+              ORDER BY m.timestamp DESC
+              LIMIT 1
+          ) AS last_message_content,
+           (
+               SELECT m.sender_id
+               FROM messages m
+               WHERE m.conversation_id = cp.conversation_id
+               ORDER BY m.timestamp DESC
+               LIMIT 1
+           ) AS last_message_sender_id,
+          (
+              SELECT m.timestamp
+              FROM messages m
+              WHERE m.conversation_id = cp.conversation_id
+              ORDER BY m.timestamp DESC
+              LIMIT 1
+          ) AS last_message_timestamp,
+          CASE
+              WHEN b.blocked_user IS NOT NULL THEN TRUE
+              ELSE FALSE
+          END AS is_blocked_by_me
+      FROM
+          users u
+      JOIN
+          conversation_participants cp ON u.id = cp.user_id
+      LEFT JOIN
+          blocked_users b ON u.id = b.blocked_user AND b.blocker_user = ?
+      WHERE
+          cp.conversation_id IN (
+              SELECT conversation_id
+              FROM conversation_participants
+              WHERE user_id = ?
+          )
+          AND u.id != ?
+      ORDER BY
+          last_message_timestamp DESC, -- Order by the most recent message first
+          u.username ASC -- Secondary sort, e.g., alphabetically by username
+      LIMIT ? OFFSET ?;
 		  `,
       [id, id, id, id, limit, offset]
     );
     return users;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const updateUserStatus = async (
+  userId: string,
+  status: string
+): Promise<{ lastId: number; changed: boolean }> => {
+  try {
+    const user = await dbRun(
+      "UPDATE users SET status = ?, last_seen = ? WHERE id = ?",
+      [status, new Date().toISOString(), userId]
+    );
+    return { lastId: user.lastID, changed: user.changes > 0 };
   } catch (error) {
     throw error;
   }

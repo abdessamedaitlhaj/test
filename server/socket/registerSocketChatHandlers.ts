@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { createMessage, addLastRead } from "../controllers/chat/messages.ts"; // This is the only import needed for saving
-import { db } from "../db/db.ts";
+import { FindById, updateUserStatus } from "../models/Users.ts";
+import { dbGet } from "server/models/dbHelpers.ts";
 
 export const registerSocketChatHandlers = (
   app: FastifyInstance,
@@ -32,16 +33,6 @@ export const registerSocketChatHandlers = (
       app.io.to(String(friendId)).emit("friend_request_accepted");
     }
   );
-
-  socket.on("unblock_user", (userId: string) => {
-    // optionally will notify the unblocked user
-    const authenticatedUserId = (socket as any).userId;
-  });
-
-  socket.on("block_user", (userId: string) => {
-    // optionally will notify the blocked user
-    const authenticatedUserId = (socket as any).userId;
-  });
 
   // socket.on(
   //   "unreadCounts",
@@ -95,4 +86,40 @@ export const registerSocketChatHandlers = (
       }
     }
   );
-};
+
+  socket.on("block_user", async (data: { userId: string, blockedId: string }) => {
+    app.io.to(String(data.blockedId)).emit("user_blocked", data);
+  });
+
+  socket.on("unblock_user", async (data: { userId: string, blockedId: string }) => {
+    app.io.to(String(data.blockedId)).emit("user_unblocked", data);
+  });
+
+  socket.on("user_offline", async (userId: string) => {
+    socket.broadcast.emit("user_offline", userId);
+    try {
+      await updateUserStatus(userId, "offline");
+    } catch (error) {
+      app.log.error(`Failed to update user ${userId} status to offline: ${error}`);
+    } 
+  });
+
+  socket.on("user_online", async (userId: string) => {
+    socket.broadcast.emit("user_online", userId);
+    try {
+      await updateUserStatus(userId, "online");
+    } catch (error) {
+      app.log.error(`Failed to update user ${userId} status to online: ${error}`);
+    }
+  });
+
+  socket.on("refresh_chat_users", async (userId: string) => {
+
+    try {
+      const user = await FindById(String(userId));
+      app.io.to(String(userId)).emit("refresh_chat_users", user);
+    } catch (error) {
+      app.log.error(`Failed to refresh chat users for user ${userId}: ${error}`);
+    }
+  });
+}

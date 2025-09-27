@@ -6,6 +6,7 @@ import api from "@/utils/Axios";
 import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/App";
 import { useMessages } from "@/store/useMessages";
+import { toast } from "react-toastify"
 
 export const ChatArea = ({ isBlocked, setStartedSince }) => {
   const { socket, user, selectedUser, conversation }: any = useStore();
@@ -26,9 +27,7 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
   const fetchedMessages = data?.pages.flat() || [];
   const allMessages = [...fetchedMessages, ...conversation];
 
-  // reverse the messages to show the latest at the bottom
   allMessages.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-  //
 
   useEffect(() => {
     if (!selectedUser) return;
@@ -101,6 +100,27 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
     checkBlockedStatus();
     queryClient.invalidateQueries({ queryKey: ["chatUsers"] });
   }, [selectedUser]);
+
+  useEffect(() => {
+
+    socket.on("user_blocked", (data: { userId: string, blockedId: string }) => {
+      if (String(data.userId) === String(selectedUser?.id)) {
+        toast("You are blocked by this user");
+        setBlockedByUser(true);
+      }
+    });
+    socket.on("user_unblocked", (data: { userId: string, unblockedId: string }) => {
+      if (String(data.userId) === String(selectedUser?.id)) {
+        toast("You are unblocked by this user");
+        setBlockedByUser(false);
+      }
+    });
+
+    return () => {
+      socket.off("user_blocked");
+      socket.off("user_unblocked");
+    }
+  }, [socket, selectedUser]);
 
   useEffect(() => {
     if (!selectedUser) return;
