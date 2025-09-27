@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/App";
 import { useMessages } from "@/store/useMessages";
 import { toast } from "react-toastify"
+import { timeFormat } from "@/utils/TimeFormat";
 
 export const ChatArea = ({ isBlocked, setStartedSince }) => {
   const { socket, user, selectedUser, conversation }: any = useStore();
@@ -60,27 +61,6 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
       socket.off("stop_typing");
     };
   }, [socket, user, selectedUser]);
-
-  const formatTimeDifference = (timestamp) => {
-    const messageDate = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - messageDate.getTime();
-    const diffSeconds = Math.floor(diffMs / 1000);
-
-    if (diffSeconds < 60) return "Now";
-
-    const diffMinutes = Math.floor(diffSeconds / 60);
-    if (diffMinutes < 60) return `${diffMinutes}m`;
-
-    const diffHours = Math.floor(diffMinutes / 60);
-    if (diffHours < 24) return `${diffHours}h`;
-
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 365) return `${diffDays}d`;
-
-    const diffYears = Math.floor(diffDays / 365);
-    return `${diffYears}y`;
-  };
 
   useEffect(() => {
     if (!selectedUser || !state?.user) return;
@@ -152,9 +132,9 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
   
   return (
     <>
-      <div className="flex-1 overflow-y-auto  p-4 scrollbar-hidden">
-                  <div className="p-2 flex items-center justify-center">
+      <div className="flex-1 overflow-y-auto px-4 scrollbar-hidden">
             {hasNextPage ? (
+                  <div className="p-2 flex items-center justify-center">
               <button
                 onClick={() => fetchNextPage()}
                 disabled={isFetchingNextPage}
@@ -169,6 +149,7 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
                   </span>
                 )}
               </button>
+                      </div>
             ) : (
                     <div className="flex flex-col items-center justify-center py-8">
                         <img
@@ -183,7 +164,6 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
                     </div>
                 )
             }
-          </div>
 
 
 
@@ -225,7 +205,7 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
                   </span>
                   <div className="flex justify-end">
                     <span className="text-[10px] w-[32px] h-[13px] text-end">
-                      {formatTimeDifference(conv.timestamp)}
+                      {timeFormat(conv.timestamp)}
                     </span>
                   </div>
                 </div>

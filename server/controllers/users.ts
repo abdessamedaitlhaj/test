@@ -1,5 +1,5 @@
 import type { FastifyRequest, FastifyReply } from "fastify";
-import { FindById, getAllUsers, SearchByName } from "../models/Users";
+import { FindById, getAllUsers, SearchByName, selectSearchChatUsers } from "../models/Users";
 import {
   createFriendRequest,
   getFriendInvitations,
@@ -238,6 +238,29 @@ export const SearchRequest = async (
     return reply.status(200).send({ users });
   } catch (err: Error | any) {
     console.error("SearchRequest Error : ", err.message);
+    return reply.status(500).send({ message: err.message });
+  }
+};
+
+export const searchChatUsers = async (
+  req: FastifyRequest,
+  reply: FastifyReply
+) => {
+
+
+  const { srch } = req.query as { srch: string };
+  const { id } = req.user_infos as { id: string };
+
+
+  
+  if (!srch) {
+    return reply.status(400).send({ message: "Username is required" });
+  }
+
+  try {
+    const users = await selectSearchChatUsers(id, srch);
+    return reply.status(200).send({ users });
+  } catch (err: Error | any) {
     return reply.status(500).send({ message: err.message });
   }
 };

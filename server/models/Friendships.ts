@@ -1,14 +1,16 @@
-import { db } from '../db/db.ts';
-import { dbAll } from './dbHelpers.ts';
+import { db } from "../db/db.ts";
+import { dbAll } from "./dbHelpers.ts";
 
 const USER_STATUS = {
-  PENDING: 'pending',
-  ACCEPTED: 'accepted',
-  BLOCKED: 'blocked',
+  PENDING: "pending",
+  ACCEPTED: "accepted",
+  BLOCKED: "blocked",
 } as const;
 
 // This will result in: "'pending', 'accepted', 'blocked'"
-const statusValues = Object.values(USER_STATUS).map((val) => `'${val}'`).join(', ');
+const statusValues = Object.values(USER_STATUS)
+  .map((val) => `'${val}'`)
+  .join(", ");
 
 db.run(
   `
@@ -24,8 +26,9 @@ db.run(
   )
   `,
   (err) => {
-    if (err) console.error('❌ Failed to create friendships table', err.message);
-    else console.log('✅ Friendships table ready.');
+    if (err)
+      console.error("❌ Failed to create friendships table", err.message);
+    else console.log("✅ Friendships table ready.");
   }
 );
 
@@ -33,64 +36,86 @@ export interface Friendship {
   id: number;
   requester_id: number;
   receiver_id: number;
-  status: typeof USER_STATUS[keyof typeof USER_STATUS];
+  status: (typeof USER_STATUS)[keyof typeof USER_STATUS];
   createdAT: string;
 }
 
-export const createFriendRequest = 
-    (requester_id: string, receiver_id: string): Promise<Friendship> => {
-        return new Promise((resolve, reject) => {
-          db.run('INSERT INTO friendships (requester_id, receiver_id) VALUES (?, ?)',
-          [requester_id, receiver_id], function(err) {
-            if(err) reject(err);
-            else {
-              db.get('SELECT * FROM friendships WHERE id = ?', [this.lastID], (err, row) => {
-                if(err) reject(err);
-                else resolve(row as Friendship);
-              });
-            }
-          })
-        });
-    }
-
-export const getFriendInvitations = (user_id: string): Promise<Friendship[]> => {
+export const createFriendRequest = (
+  requester_id: string,
+  receiver_id: string
+): Promise<Friendship> => {
   return new Promise((resolve, reject) => {
-    db.all(`SELECT f.id, f.requester_id, f.receiver_id, f.status, u.username, u.avatarurl
+    db.run(
+      "INSERT INTO friendships (requester_id, receiver_id) VALUES (?, ?)",
+      [requester_id, receiver_id],
+      function (err) {
+        if (err) reject(err);
+        else {
+          db.get(
+            "SELECT * FROM friendships WHERE id = ?",
+            [this.lastID],
+            (err, row) => {
+              if (err) reject(err);
+              else resolve(row as Friendship);
+            }
+          );
+        }
+      }
+    );
+  });
+};
+
+export const getFriendInvitations = (
+  user_id: string
+): Promise<Friendship[]> => {
+  return new Promise((resolve, reject) => {
+    db.all(
+      `SELECT f.id, f.requester_id, f.receiver_id, f.status, u.username, u.avatarurl
             FROM friendships f
             LEFT JOIN users u ON f.requester_id = u.id
             WHERE f.receiver_id = ? AND f.status = ?`,
-            [user_id, USER_STATUS.PENDING],
-    (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows as Friendship[]);
-    });
-  })
-}
+      [user_id, USER_STATUS.PENDING],
+      (err, rows) => {
+        if (err) reject(err);
+        else resolve(rows as Friendship[]);
+      }
+    );
+  });
+};
 
+export const AllreadyRequested = (
+  requester_id: string,
+  receiver_id: string
+): Promise<Friendship | undefined> => {
+  return new Promise((resolve, reject) => {
+    db.get(
+      "SELECT * FROM friendships WHERE requester_id = ? AND receiver_id = ?",
+      [requester_id, receiver_id],
+      (err, row) => {
+        if (err) reject(err);
+        else resolve(row as Friendship | undefined);
+      }
+    );
+  });
+};
 
-export const AllreadyRequested = (requester_id: string, receiver_id: string):
-    Promise<Friendship | undefined> => {
-      return new Promise ((resolve, reject)=> {
-        db.get('SELECT * FROM friendships WHERE requester_id = ? AND receiver_id = ?',
-        [requester_id, receiver_id],
-        (err, row) => {
-          if (err) reject(err);
-          else resolve(row as Friendship | undefined);
-        })
-      })
-}
-
-export const removeFriendship = (userId: string, friendId: string): Promise<void> => {
-	return new Promise((resolve, reject) => {
-		db.run(`DELETE FROM friendships
+export const removeFriendship = (
+  userId: string,
+  friendId: string
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    db.run(
+      `DELETE FROM friendships
 				WHERE(requester_id = ? AND receiver_id = ?) OR
-				(requester_id = ? AND receiver_id = ?)`, [userId, friendId, friendId, userId],
-			(err, )=>{
-				if (err) reject(err);
-				else resolve();
-			})
-	})
-}
+				(requester_id = ? AND receiver_id = ?)`,
+      [userId, friendId, friendId, userId],
+      (err) => {
+        if (err) reject(err);
+        else resolve();
+      }
+    );
+  });
+};
 
 // export const AlreadySentMe = (requester_id: string, receiver_id: string):
 //     Promise<Friendship> => {
@@ -99,30 +124,28 @@ export const removeFriendship = (userId: string, friendId: string): Promise<void
 //       })
 // }
 
-
-
 // return my friends
-export const selectFriends = async (user_id: string, limit: number, offset: number): Promise<Friendship[]> => {
-
+export const selectFriends = async (
+  user_id: string,
+  limit: number,
+  offset: number
+): Promise<Friendship[]> => {
   try {
-
+    // select just online friends
     const friends = await dbAll<Friendship>(
       `
-          SELECT DISTINCT
-          u2.id,
-          u2.username,
-          u2.avatarurl
-          FROM
-              users u1
-          JOIN
-              friendships f ON u1.id = f.requester_id OR u1.id = f.receiver_id
-          JOIN
-              users u2 ON (u2.id = f.requester_id AND u2.id != u1.id) OR (u2.id = f.receiver_id AND u2.id != u1.id)
-          WHERE
-              u1.id = ? AND f.status = 'accepted'
-          LIMIT ? OFFSET ?
-        `,
-      [user_id, limit, offset]
+      SELECT f.id, f.requester_id, f.receiver_id, f.status, u.username, u.avatarurl, u.status AS user_status
+FROM friendships f
+JOIN users u ON (u.id = CASE
+    WHEN f.requester_id = ? THEN f.receiver_id
+    ELSE f.requester_id
+END)
+WHERE (f.requester_id = ? OR f.receiver_id = ?)
+  AND f.status = 'accepted'
+  AND u.status = 'online' -- This line is added to filter for online friends only
+ORDER BY u.username ASC
+LIMIT ? OFFSET ?`,
+      [user_id, user_id, user_id, limit, offset]
     );
     return friends;
   } catch (error) {

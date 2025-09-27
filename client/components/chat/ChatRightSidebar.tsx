@@ -111,7 +111,7 @@ export const ChatRightSidebar = ({ startedSince }) => {
               </span>
             </div>
 
-            <div className="overflow-y-auto scrollbar-hidden self-start h-full w-full my-8 px-4">
+            <div className="overflow-y-auto scrollbar-hidden self-start h-full w-full my-4 px-4">
               <div className="space-y-2">
                 {allFriends?.map((friend, index) => (
                   <div
@@ -134,8 +134,8 @@ export const ChatRightSidebar = ({ startedSince }) => {
                   </div>
                 ))}
               </div>
-              <div className="p-2 flex items-center justify-center">
                 {hasNextPage && (
+              <div className="py-4 flex items-center justify-center">
                   <button
                     onClick={() => fetchNextPage()}
                     disabled={isFetchingNextPage}
@@ -150,8 +150,8 @@ export const ChatRightSidebar = ({ startedSince }) => {
                       </span>
                     )}
                   </button>
-                )}
               </div>
+                )}
             </div>
           </>
         )}

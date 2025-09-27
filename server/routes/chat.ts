@@ -14,6 +14,7 @@ import {
   unblockUser,
   isBlockedReverse,
 } from "../controllers/chat/blocks.ts";
+import { searchChatUsers } from "server/controllers/users.ts";
 
 export async function ChatRoutes(fastify: FastifyInstance) {
   fastify.get("/messages", { preHandler: verifyToken }, getMessages);
@@ -30,13 +31,14 @@ export async function ChatRoutes(fastify: FastifyInstance) {
   );
   fastify.get("/users/chatUsers", { preHandler: verifyToken }, getChatUsers);
   fastify.get("/users/friends", { preHandler: verifyToken }, getMyFriends);
-  fastify.post("/users/block/:userId", { preHandler: verifyToken }, blockUser);
   fastify.get("/users/block/:userId", { preHandler: verifyToken }, isBlocked);
   fastify.get(
     "/users/blockReverse/:userId",
     { preHandler: verifyToken },
     isBlockedReverse
   );
+  fastify.get("/users/searchChatUsers", { preHandler: verifyToken }, searchChatUsers);
+  fastify.post("/users/block/:userId", { preHandler: verifyToken }, blockUser);
   fastify.post(
     "/users/unblock/:userId",
     { preHandler: verifyToken },

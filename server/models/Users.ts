@@ -214,8 +214,8 @@ export const selectChatUsers = async (
           )
           AND u.id != ?
       ORDER BY
-          last_message_timestamp DESC, -- Order by the most recent message first
-          u.username ASC -- Secondary sort, e.g., alphabetically by username
+          last_message_timestamp DESC,
+          u.username ASC
       LIMIT ? OFFSET ?;
 		  `,
       [id, id, id, id, limit, offset]
@@ -236,6 +236,59 @@ export const updateUserStatus = async (
       [status, new Date().toISOString(), userId]
     );
     return { lastId: user.lastID, changed: user.changes > 0 };
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const selectSearchChatUsers = async (
+  id: string,
+  username: string,
+): Promise<User[]> => {
+
+  const search = `%${username}%`;
+
+
+  try {
+    const users = await dbAll<User>(
+      `
+      SELECT
+          DISTINCT u.id,
+          u.username,
+          u.avatarurl,
+          u.status,
+          u.last_seen,
+          (
+              SELECT COUNT(*)
+              FROM messages m
+              WHERE m.sender_id != ?
+              AND m.conversation_id = cp.conversation_id
+              AND m.timestamp > cp.last_read_message
+          ) AS unread_count,
+          CASE
+              WHEN b.blocked_user IS NOT NULL THEN TRUE
+              ELSE FALSE
+          END AS is_blocked_by_me
+      FROM
+          users u
+      JOIN
+          conversation_participants cp ON u.id = cp.user_id
+      LEFT JOIN
+          blocked_users b ON u.id = b.blocked_user AND b.blocker_user = ?
+      WHERE
+          cp.conversation_id IN (
+              SELECT conversation_id
+              FROM conversation_participants
+              WHERE user_id = ?
+          )
+          AND u.id != ?
+          AND u.username LIKE ?
+      ORDER BY
+          u.username ASC
+      `,
+      [id, id, id, id, search]
+    );
+    return users;
   } catch (error) {
     throw error;
   }
