@@ -125,26 +125,25 @@ export const removeFriendship = (
 // }
 
 // return my friends
-export const selectFriends = async (
+export const selectOnlineFriends = async (
   user_id: string,
   limit: number,
   offset: number
 ): Promise<Friendship[]> => {
   try {
-    // select just online friends
     const friends = await dbAll<Friendship>(
       `
       SELECT f.id, f.requester_id, f.receiver_id, f.status, u.username, u.avatarurl, u.status AS user_status
-FROM friendships f
-JOIN users u ON (u.id = CASE
-    WHEN f.requester_id = ? THEN f.receiver_id
-    ELSE f.requester_id
-END)
-WHERE (f.requester_id = ? OR f.receiver_id = ?)
-  AND f.status = 'accepted'
-  AND u.status = 'online' -- This line is added to filter for online friends only
-ORDER BY u.username ASC
-LIMIT ? OFFSET ?`,
+      FROM friendships f
+      JOIN users u ON (u.id = CASE
+          WHEN f.receiver_id = ? THEN f.receiver_id
+          ELSE f.requester_id
+      END)
+      WHERE (f.requester_id = ? OR f.receiver_id = ?)
+        AND f.status = 'accepted'
+        AND u.status = 'online'
+      ORDER BY u.username ASC
+      LIMIT ? OFFSET ?`,
       [user_id, user_id, user_id, limit, offset]
     );
     return friends;

@@ -113,7 +113,7 @@ export const registerSocketChatHandlers = (
     }
   });
 
-  socket.on("refresh_chat_users", async (userId: string) => {
+    socket.on("refresh_chat_users", async (userId: string) => {
 
     try {
       const user = await FindById(String(userId));
@@ -122,4 +122,5 @@ export const registerSocketChatHandlers = (
       app.log.error(`Failed to refresh chat users for user ${userId}: ${error}`);
     }
   });
+
 }

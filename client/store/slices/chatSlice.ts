@@ -12,6 +12,7 @@ interface Message {
   avatarurl: string;
   content: string;
   timestamp: string;
+  conversation_id: number;
 }
 
 interface ChatUser {
@@ -102,9 +103,11 @@ export const createChatSlice: StateCreator<ChatSlice, [], [], ChatSlice> = (
         {
           id: message.id,
           sender_id: message.sender_id,
+          receiver_id: message.receiver_id,
           avatarurl: message.avatarurl,
           content: message.content,
           timestamp: message.timestamp,
+          conversation_id: message.conversation_id,
         },
       ],
     }));

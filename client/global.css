@@ -8,7 +8,8 @@
 @tailwind utilities;
 
 * {
-  font-family: "Zen Dots";
+    font-family: 'Zen Dots', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+    /* Add other system emoji fonts as needed for broader compatibility */
 }
 .scrollbar-hidden {
   -ms-overflow-style: none; /* IE/Edge */
@@ -25,6 +26,7 @@
 .gradient_red {
   background: linear-gradient(to right, #e21313, #820e0e);
 }
+
 
 /* global.css */
 body,

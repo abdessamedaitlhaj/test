@@ -1,6 +1,6 @@
-import { selectFriends } from "server/models/Friendships";
+import { selectOnlineFriends } from "server/models/Friendships";
 
-export const getMyFriends = async (request: any, reply: any) => {
+export const getOnlineFriends = async (request: any, reply: any) => {
 
     const userId = request.user_infos?.id;
     const limit = Number(request.query.limit || "20" as string);
@@ -12,7 +12,7 @@ export const getMyFriends = async (request: any, reply: any) => {
     }
 
     try {
-      const friends = await selectFriends(String(userId), limit, offset);
+      const friends = await selectOnlineFriends(String(userId), limit, offset);
       return reply.status(200).send({ friends });
     } catch (error) {
       return reply.status(500).send({ error: error });

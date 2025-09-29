@@ -1,6 +1,8 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useStore } from "../../store/useStore";
 import send from "../../../public/assests/send.png";
+import { Smile } from "lucide-react";
+import { EmojiPicker } from "./EmojiPicker";
 
 interface Message {
   sender_id: number;
@@ -13,6 +15,12 @@ export const Input = ({ disabled }) => {
   const { socket, user, selectedUser, addMessage } = useStore();
   const isTypingRef = useRef(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showPicker, setShowPicker] = useState(false);
+  const emojiRef = useRef(null);
+
+  const onEmojiSelected = (emojiText) => {
+    setNewMessage((prev) => prev + emojiText);
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNewMessage(e.target.value);
@@ -42,6 +50,19 @@ export const Input = ({ disabled }) => {
       }
     }
   };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (emojiRef.current && !emojiRef.current.contains(event.target)) {
+        setShowPicker(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [emojiRef]);
 
   const handleSendMessage = (
     e:
@@ -78,7 +99,7 @@ export const Input = ({ disabled }) => {
 
   return (
     <div className=" bg-input_color rounded-[20px] w-full h-[52px] p-4">
-      <div className="flex items-center justify-between space-x-20 w-full h-full">
+      <div className="flex items-center  w-full h-full">
         <input
           disabled={disabled}
           onKeyDown={handleKeyDown}
@@ -92,17 +113,35 @@ export const Input = ({ disabled }) => {
         />
 
         <div className="flex items-center justify-center ">
-          <button
-            onClick={handleSendMessage}
-            className={`flex-shrink-0  ${disabled ? "opacity-50" : ""}`}
-            disabled={disabled}
-          >
-            <img
-              src={send}
-              alt="send"
-              className="size-[29px]"
-            />
-          </button>
+          <div className="flex items-center gap-3">
+            <div ref={emojiRef} className="flex items-center">
+            <button
+              onClick={() => 
+                setShowPicker((val) => !val)
+              }
+              className={`flex-shrink-0  ${disabled ? "opacity-50" : ""}`}
+              disabled={disabled}
+            >
+              <Smile
+                className="shrink-0 text-white/80"
+                size={28}
+                strokeWidth={1.4}
+              />
+              {showPicker && (
+                <div className="absolute bottom-16 right-16">
+                  <EmojiPicker onEmojiSelected={onEmojiSelected} />
+                </div>
+              )}
+            </button>
+            </div>
+            <button
+              onClick={handleSendMessage}
+              className={`flex-shrink-0  ${disabled ? "opacity-50" : ""}`}
+              disabled={disabled}
+            >
+              <img src={send} alt="send" className="size-[29px]" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

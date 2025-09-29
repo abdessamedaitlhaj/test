@@ -9,7 +9,7 @@ interface Message {
   timestamp: Date;
 }
 
-const MESSAGES_PAGE_SIZE = 10;
+const MESSAGES_PAGE_SIZE = 20;
 
 export const useMessages = (userId: string) => {
   const {

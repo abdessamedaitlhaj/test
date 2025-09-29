@@ -2,10 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { useStore } from "../../store/useStore";
 import { useChatUsers } from "../../store/useChatUsers";
 import { queryClient } from "@/App";
-import { Ban, MessageCircleWarning, Search } from "lucide-react";
+import { Ban, MessageCircleWarning, Search, Users } from "lucide-react";
 import { selectChatUsers } from "server/models/Users";
 import api from "@/utils/Axios";
-import { timeFormat } from "@/utils/TimeFormat";
+import { timeFormat } from "@/utils/chat/TimeFormat";
 
 interface User {
   id: number;
@@ -113,13 +113,13 @@ export const ChatLeftSidebar = ({
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.value !== "") {
       setCollapsed(true);
-    const searchTerm = e.target.value.toLowerCase();
-    searchByUsername(searchTerm);
+      const searchTerm = e.target.value.toLowerCase();
+      searchByUsername(searchTerm);
     } else {
       setCollapsed(false);
       setLoadedChatUsers([]);
     }
-  }
+  };
 
   const handleSelectedUser = (user) => {
     setSelectedUser(user);
@@ -156,46 +156,63 @@ export const ChatLeftSidebar = ({
           />
         </div>
         {collapsed && (
-        <div ref={searchChatRef} className="absolute bg-input_color shrink-0 flex flex-col text-white text-sm w-full  max-h-[300px] rounded-[10px] overflow-auto scrollbar-hidden items-center mt-2 gap-2">
-          {isLoadingChatUsers ? (
-            <div className="flex items-center justify-center h-full p-4">
-              <div className="animate-spin rounded-full size-8 border-4 border-white/70 border-t-transparent"></div>
-            </div>
-          ) : loadedChatUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-4 h-full p-4">
-              <MessageCircleWarning className="text-white/70" size={40} />
-              <span className="text-white/70  text-center text-[16px]">
-                No user found!
-              </span>
-            </div>
-          ) : (
-            loadedChatUsers?.map((user: User) => {
-              return (
-                  <div onClick={() => handleSelectedUser(user)} key={user.id} className="flex shrink-0 items-center justify-around  hover:bg-gray_3 rounded-[10px] cursor-pointer w-full h-[50px]">
-                    <img
-                      src={user?.avatarurl}
-                      alt="Profile"
-                      className="rounded-full size-[40px]"
-                    />
-                    <span className="block  w-[100px] text-start truncate">
-                      {user.username}
-                    </span>
-                    <div className={`flex items-center ${ user.is_blocked_by_me === 1 ? "justify-between" : "justify-end"} gap-2 w-[50px]`}>
-                      { user.status === "online" ? (
-                        <span className="size-[10px] bg-green-500 rounded-full"></span>
-                      ) : (
-                        <span className="text-[10px]">{ timeFormat(user.last_seen) }</span>
-                      )}
-                      { user.is_blocked_by_me === 1 &&
-                      <Ban size={20} className="text-red-500/80 m-0" />
-                      }
+          <div
+            ref={searchChatRef}
+            className="absolute bg-gray_2 shrink-0 flex flex-col text-white text-sm w-full  max-h-[300px] rounded-[10px] overflow-auto scrollbar-hidden items-center mt-2"
+          >
+            {isLoadingChatUsers ? (
+              <div className="flex items-center justify-center h-full p-4">
+                <div className="animate-spin rounded-full size-8 border-4 border-white/70 border-t-transparent"></div>
+              </div>
+            ) : loadedChatUsers.length === 0 ? (
+              <div className="flex flex-col items-center justify-center gap-3 h-full p-4">
+                <Users className="text-white/70" size={40} />
+                <span className="text-white/70  text-center text-[16px]">
+                  No user found!
+                </span>
+              </div>
+            ) : (
+              loadedChatUsers?.map((user: User, index: number) => {
+                return (
+                  <div className="w-full" key={user.id}>
+                    <div
+                      onClick={() => handleSelectedUser(user)}
+                      className="flex shrink-0 items-center justify-around  hover:bg-gray_3  cursor-pointer w-full h-[60px]"
+                    >
+                      <img
+                        src={user?.avatarurl}
+                        alt="Profile"
+                        className="rounded-full size-[40px]"
+                      />
+                      <span className="block  w-[100px] text-start truncate">
+                        {user.username}
+                      </span>
+                      <div
+                        className={`flex items-center ${
+                          user.is_blocked_by_me === 1
+                            ? "justify-between"
+                            : "justify-end"
+                        } gap-2 w-[50px]`}
+                      >
+                        {user.status === "online" ? (
+                          <span className="size-[10px] bg-green-500 rounded-full"></span>
+                        ) : (
+                          <span className="text-[10px]">
+                            {timeFormat(user.last_seen)}
+                          </span>
+                        )}
+                        {user.is_blocked_by_me === 1 && (
+                          <Ban size={20} className="text-red-500/80 m-0" />
+                        )}
+                      </div>
                     </div>
+                    {index !== loadedChatUsers.length - 1 && <hr className="border-t border-white/10 bottom-0" />}
                   </div>
-              );
-            })
-          )}
-        </div>
-      )}  
+                );
+              })
+            )}
+          </div>
+        )}
       </div>
 
       <div className="bg-gray_3/80 rounded-[20px] overflow-y-auto scrollbar-hidden mt-[21px] h-full ">

@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/App";
 import { useChatUsers } from "@/store/useChatUsers";
 
+
 export const ChatPage = () => {
   const { selectedUser, socket, unreadCounts, setChatUsers } = useStore();
   const { state } = useAuth();
@@ -58,6 +59,7 @@ export const ChatPage = () => {
   }, [isBlocked]);
 
   useEffect(() => {
+
     socket.on("refresh_chat_users", (u) => {
       queryClient.invalidateQueries({ queryKey: ["chatUsers"] });
     });
@@ -93,6 +95,8 @@ export const ChatPage = () => {
         )}
       </div>
       <ChatRightSidebar startedSince={startedSince} />
+      <div>
+      </div>
     </div>
   );
 };

@@ -3,10 +3,11 @@ import { Link } from "react-router-dom";
 import { useFriends } from "@/store/useFriends";
 import { useStore } from "@/store/useStore";
 import moment from "moment";
-import { MessageCircleWarning } from "lucide-react";
+import { MessageCircleWarning, Users } from "lucide-react";
+import { formatStartedSince } from "@/utils/chat/FormatStartedChatTime";
 
 export const ChatRightSidebar = ({ startedSince }) => {
-  const { selectedUser, setSelectedUser } = useStore();
+  const { selectedUser } = useStore();
   const {
     data,
     fetchNextPage,
@@ -17,42 +18,22 @@ export const ChatRightSidebar = ({ startedSince }) => {
     error,
   } = useFriends();
 
-  if (isError) return <div>Error: {(error as Error).message}</div>;
-
   const allFriends = data?.pages.flat() || [];
 
-  {
-    allFriends?.length === 0 ? (
-      <div className="text-white/70 text-sm text-center">
-        No friends available for chat.
-      </div>
-    ) : null;
-  }
-
-  {
-    isError ? (
-      <div className="text-white/70 text-sm text-center">
-        Error loading friends.
-      </div>
-    ) : null;
-  }
-
-  function formatStartedSince(startedSince: Date) {
-  const date = new Date(startedSince);
-
-  const month = (date.getMonth() + 1).toString().padStart(2, '0');
-  const day = date.getDate().toString().padStart(2, '0');
-  const year = date.getFullYear();
-
-  const hours = date.getHours().toString().padStart(2, '0');
-  const minutes = date.getMinutes().toString().padStart(2, '0');
-
-  return `${month}/${day}/${year} ${hours}:${minutes}`;
-}
-
   return (
-    <div className="flex flex-col space-y-[32px] h-[829px] w-[295px]">
-      {selectedUser && (
+
+    <div className={`flex flex-col space-y-[32px] h-[829px] w-[295px] ${ isError || isLoading && "bg-gray_3/80 px-4 rounded-[20px]"}`}>
+    { isError ? (
+      <div className="flex items-center justify-center h-full w-full">
+        <span className="text-red-500">Error: {error.message}</span>
+      </div>
+    ) : isLoading ? (
+      <div className="flex items-center justify-center h-full w-full">
+        <div className="animate-spin rounded-full size-10 border-4 border-white/70 border-t-transparent"></div>
+      </div>
+    ) : (
+      <>
+        { selectedUser && (
         <div className="flex flex-col items-center bg-gray_3/80 rounded-[20px] w-[295px] h-[303px] space-y-[50px]">
           <span className="mt-4 block text-[20px]     w-[113px] h-[24px]">
             Chat Info
@@ -92,15 +73,11 @@ export const ChatRightSidebar = ({ startedSince }) => {
           selectedUser ? "h-[494px]" : "h-full"
         }`}
       >
-        {isLoading ? (
-          <div className="flex items-center h-full">
-            <div className="animate-spin rounded-full size-8 border-4 border-white/70 border-t-transparent"></div>
-          </div>
-        ) : allFriends?.length === 0 ? (
-          <div className="flex flex-col justify-center items-center text-white/70 space-y-4 p-4 h-full">
-            <MessageCircleWarning size={40} />
-            <span className=" text-[16px] w-115px] h-[19px] text-center">
-              No friends available for chat!
+        {allFriends?.length === 0 ? (
+          <div className="flex flex-col justify-center items-center text-white/70 p-4 gap-4 h-full">
+            <Users size={40} />
+            <span className=" text-[16px] w-115px] text-center">
+              No friends online!
             </span>
           </div>
         ) : (
@@ -156,6 +133,9 @@ export const ChatRightSidebar = ({ startedSince }) => {
           </>
         )}
       </div>
+      </>
+      )
+    }
     </div>
   );
 };

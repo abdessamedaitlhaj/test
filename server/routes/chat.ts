@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { getChatUsers } from "../controllers/chat/chatUsers.ts";
-import { getMyFriends } from "../controllers/friends.ts";
+import { getOnlineFriends } from "../controllers/friends.ts";
 import { verifyToken } from "server/middleware/verifyToken.ts";
 import {
   createMessage,
@@ -30,7 +30,7 @@ export async function ChatRoutes(fastify: FastifyInstance) {
     addLastRead
   );
   fastify.get("/users/chatUsers", { preHandler: verifyToken }, getChatUsers);
-  fastify.get("/users/friends", { preHandler: verifyToken }, getMyFriends);
+  fastify.get("/users/friends", { preHandler: verifyToken }, getOnlineFriends);
   fastify.get("/users/block/:userId", { preHandler: verifyToken }, isBlocked);
   fastify.get(
     "/users/blockReverse/:userId",

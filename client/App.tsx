@@ -57,7 +57,8 @@ const App = () => {
 
     socket.on("receive_message", (msg: Message) => {
       if (
-        String(msg.sender_id) === String(user.id) ||
+        (String(msg.sender_id) === String(user.id) &&
+          String(msg.receiver_id) === String(selectedUser?.id)) ||
         (String(msg.receiver_id) === String(user.id) &&
           String(msg.sender_id) === String(selectedUser?.id))
       ) {
