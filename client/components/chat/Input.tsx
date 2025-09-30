@@ -113,34 +113,36 @@ export const Input = ({ disabled }) => {
         />
 
         <div className="flex items-center justify-center ">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1">
             <div ref={emojiRef} className="flex items-center">
-            <button
-              onClick={() => 
-                setShowPicker((val) => !val)
-              }
-              className={`flex-shrink-0  ${disabled ? "opacity-50" : ""}`}
-              disabled={disabled}
-            >
-              <Smile
-                className="shrink-0 text-white/80"
-                size={28}
-                strokeWidth={1.4}
-              />
-              {showPicker && (
-                <div className="absolute bottom-16 right-16">
-                  <EmojiPicker onEmojiSelected={onEmojiSelected} />
-                </div>
-              )}
-            </button>
+              <div className={`flex items-center justify-center size-[42px] rounded-full ${!disabled && "hover:bg-gray_3"}`}>
+                <button
+                  onClick={() => setShowPicker((val) => !val)}
+                  className={`flex-shrink-0  ${disabled ? "opacity-50" : ""}`}
+                  disabled={disabled}
+                >
+                  <Smile
+                    className="shrink-0 text-white/80"
+                    size={28}
+                    strokeWidth={1.4}
+                    />
+                    </button>
+              </div>
+                {showPicker && (
+                  <div className="absolute bottom-16 right-16">
+                    <EmojiPicker onEmojiSelected={onEmojiSelected} />
+                  </div>
+                )}
             </div>
-            <button
-              onClick={handleSendMessage}
-              className={`flex-shrink-0  ${disabled ? "opacity-50" : ""}`}
-              disabled={disabled}
-            >
-              <img src={send} alt="send" className="size-[29px]" />
-            </button>
+            <div className={`flex items-center justify-center size-[42px] rounded-full ${!disabled && "hover:bg-gray_3"}`}>
+              <button
+                onClick={handleSendMessage}
+                className={`flex-shrink-0   ${disabled ? "opacity-50" : ""}`}
+                disabled={disabled}
+              >
+                <img src={send} alt="send" className="size-[29px]" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

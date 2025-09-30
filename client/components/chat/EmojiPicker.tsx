@@ -1,111 +1,160 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import emojiList from "emoji.json";
-import { Search } from "lucide-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+
+import {
+  Activity,
+  Clock,
+  Component,
+  Flag,
+  Hamburger,
+  Lamp,
+  Leaf,
+  Plane,
+  Search,
+  Smile,
+  Users,
+} from "lucide-react";
 import { useRef } from "react";
+import { c } from "vite/dist/node/moduleRunnerTransport.d-DJ_mE5sf";
 
 export const EmojiPicker = ({ onEmojiSelected }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredEmojis, setFilteredEmojis] = useState(emojiList);
   const categoryRef = useRef(null);
+  const emojiElement = useRef(null);
+  const [recentEmojis, setRecentEmojis] = useState([]);
 
   useEffect(() => {
     const results = emojiList.filter(
       (emoji) =>
         emoji.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emoji.codes.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emoji.category.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredEmojis(results);
   }, [searchTerm]);
 
-  const handleEmojiClick = (emojiChar) => {
+  useEffect(() => {
+    const storedEmojis = localStorage.getItem("recentEmojis");
+    if (storedEmojis) {
+      setRecentEmojis(JSON.parse(storedEmojis));
+    }
+  }, []);
+
+  const handleEmojiClick = (emojiChar: string) => {
     onEmojiSelected(emojiChar);
+    setRecentEmojis((prev) => {
+      const updated = [emojiChar, ...prev.filter((e) => e !== emojiChar)];
+      return updated.slice(0, 8);
+    });
+    localStorage.setItem("recentEmojis", JSON.stringify(recentEmojis));
   };
 
-  const scrollCategory = (dir) => {
-    const container = categoryRef.current;
-    if (!container) return;
-    const scrollAmount = 80;
-    container.scrollBy({
-      left: dir === "left" ? -scrollAmount : scrollAmount,
-      behavior: "smooth",
-    });
-  };
+  useEffect(() => {
+    if (emojiElement.current) {
+      emojiElement.current.scrollTo({ top: 0 });
+    }
+  }, [searchTerm]);
 
   const categories = [
-    "All",
-    "Smileys & Emotion",
-    "People & Body",
-    "Animals & Nature",
-    "Food & Drink",
-    "Travel & Places",
-    "Activities",
-    "Objects",
-    "Symbols",
-    "Flags",
+    [Smile, "Smileys & Emotion"],
+    [Users, "Person"],
+    [Activity, "Activities"],
+    [Leaf, "Animals & Nature"],
+    [Plane, "Travel & Places"],
+    [Flag, "Flags"],
+    [Lamp, "Objects"],
+    [Component, "Symbols"],
+    [Hamburger, "Food & Drink"],
   ];
-
-
 
   return (
     <>
-      <div className="bg-gray_3 rounded-[20px] w-[300px] h-[400px]">
+      <div className="bg-gray_1 rounded-[20px] w-[320px] h-[400px]">
         <div className="flex flex-col bg-gray_2 rounded-t-[20px] p-3">
-            <div className="relative flex items-center">
-              <Search className="absolute text-yellow_4/80 ml-2" size={25} />
-              <input
-                type="text"
-                placeholder="search..."
-                className="text-white/60 w-full border-2 p-1 pl-10 border-yellow_4/80 rounded-[15px] bg-transparent focus:outline-none"
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+          <div className="relative flex items-center">
+            <Search
+              className="absolute text-white/80 ml-2"
+              size={25}
+              strokeWidth={1}
+            />
+            <input
+              type="text"
+              placeholder="search..."
+              className="text-white/80  w-full border p-1 pl-10 border-white/80 rounded-[15px] bg-transparent focus:outline-none"
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="relative mt-3 flex justify-center">
+            <div
+              ref={categoryRef}
+              className="flex  items-center justify-between overflow-x-auto scrollbar-hidden scroll-smooth w-[300px]"
+            >
+              {categories.map(([Icon, label]) => (
+                <button
+                  key={label}
+                  className="flex flex-col items-center justify-center flex-shrink-0"
+                  onClick={(e) => setSearchTerm(label)}
+                >
+                  <Icon
+                    className="text-white/80 hover:text-yellow_4/80"
+                    size={20}
+                    strokeWidth={1.4}
+                  />
+                </button>
+              ))}
             </div>
-            <div className="relative mt-3">
-              <button
-                className="absolute left-0 top-1/2 transform -translate-y-1/2 bg-yellow_4/80 hover:bg-yellow_4  text-gray_1 rounded-full p-1 z-10"
-                onClick={() => scrollCategory("left")}
-              >
-                <ChevronLeft size={20} />
-              </button>
-              <div
-                ref={categoryRef}
-                className="flex gap-2 mx-6 overflow-x-auto scrollbar-hidden scroll-smooth"
-              >
-                {categories.map((cat) => (
-                  <span
-                    key={cat}
-                    className="shrink-0 text-[12px] text-white/70 px-3 py-1 bg-gray_2 rounded-full whitespace-nowrap cursor-pointer hover:bg-gray_3"
-                    onClick={() => cat === "All" ? setSearchTerm("") : setSearchTerm(cat)}
-                  >
-                    {cat}
-                  </span>
+          </div>
+
+          {recentEmojis.length > 0 && (
+            <div className="mt-3 flex h-[40px] items-center justify-start overflow-hidden">
+              <Clock
+                className="shrink-0 text-white/80"
+                size={20}
+                strokeWidth={1.4}
+              />
+              <div className="flex ml-3 gap-2">
+                {recentEmojis.map((emojiChar, index) => (
+                  <div className="flex items-center justify-center size-8 rounded-full hover:bg-gray_3" key={index}>
+                    <button
+                      onClick={() => handleEmojiClick(emojiChar)}
+                      style={{ fontSize: "20px", lineHeight: 1 }}
+                    >
+                      {emojiChar}
+                    </button>
+                  </div>
                 ))}
               </div>
-              <button
-                className="absolute right-0 top-1/2 transform -translate-y-1/2 bg-yellow_4/80 hover:bg-yellow_4 text-gray_1 rounded-full p-1 z-10"
-                onClick={() => scrollCategory("right")}
-              >
-                <ChevronRight size={20} />
-              </button>
             </div>
+          )}
         </div>
-      <div className="overflow-auto scrollbar-hidden h-[280px] px-2">
-        <div className="grid grid-cols-4 gap-2 mt-4">
-          {filteredEmojis.map((e) => (
-            <div className="hover:bg-gray_2 rounded-full size-12 flex items-center justify-center">
-                <button
+
+        <div
+          className="max-h-[240px] overflow-auto scrollbar-hidden p-2"
+          ref={emojiElement}
+        >
+          <div className="grid grid-cols-6 ">
+            {filteredEmojis.map((e, i) => {
+
+              return (
+                <div
+                  className="hover:bg-gray_3   rounded-full size-10 flex items-center justify-center ml-1"
                   key={e.codes}
-                  onClick={() => handleEmojiClick(e.char)}
-                  style={{ fontSize: "28px", lineHeight: 1 }}
+                  id={e.codes}
                 >
-                  {e.char}
-                </button>
-            </div>
-          ))}
+                  <button
+                    key={e.codes}
+                    onClick={() => handleEmojiClick(e.char)}
+                    style={{ fontSize: "28px", lineHeight: 1 }}
+                  >
+                    {e.char}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
-    </div>
     </>
   );
 };
