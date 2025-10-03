@@ -130,7 +130,7 @@ export const EmojiPicker = ({ onEmojiSelected }) => {
         </div>
 
         <div
-          className="max-h-[240px] overflow-auto scrollbar-hidden p-2"
+          className={`${recentEmojis.length > 0 ? "max-h-[240px]" : "max-h-[280px]"} overflow-auto scrollbar-hidden p-2`}
           ref={emojiElement}
         >
           <div className="grid grid-cols-6 ">

@@ -7,6 +7,7 @@ import {
   getMessages,
   getConversation,
   addLastRead,
+  deleteChat
 } from "../controllers/chat/messages.ts";
 import {
   blockUser,
@@ -17,6 +18,7 @@ import {
 import { searchChatUsers } from "server/controllers/users.ts";
 
 export async function ChatRoutes(fastify: FastifyInstance) {
+    fastify.delete("/chat/:userId", { preHandler: verifyToken }, deleteChat);
   fastify.get("/messages", { preHandler: verifyToken }, getMessages);
   fastify.post("/messages", { preHandler: verifyToken }, createMessage);
   fastify.get(

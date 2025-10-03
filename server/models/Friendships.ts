@@ -133,18 +133,22 @@ export const selectOnlineFriends = async (
   try {
     const friends = await dbAll<Friendship>(
       `
-      SELECT f.id, f.requester_id, f.receiver_id, f.status, u.username, u.avatarurl, u.status AS user_status
-      FROM friendships f
-      JOIN users u ON (u.id = CASE
-          WHEN f.receiver_id = ? THEN f.receiver_id
-          ELSE f.requester_id
-      END)
-      WHERE (f.requester_id = ? OR f.receiver_id = ?)
-        AND f.status = 'accepted'
-        AND u.status = 'online'
-      ORDER BY u.username ASC
-      LIMIT ? OFFSET ?`,
-      [user_id, user_id, user_id, limit, offset]
+      SELECT 
+    u.id,
+    u.username,
+    u.avatarurl,
+    COUNT(*) OVER() as online_friends
+FROM
+    users u
+    LEFT JOIN friendships f ON 
+        ((f.requester_id = u.id AND f.receiver_id = ?)
+        OR (f.receiver_id = u.id AND f.requester_id = ?))
+    
+WHERE
+    f.status = 'accepted' AND u.status = 'online'
+      LIMIT ? OFFSET ?;
+      `,
+      [user_id, user_id, limit, offset]
     );
     return friends;
   } catch (error) {

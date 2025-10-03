@@ -93,3 +93,26 @@ export const insertMessage = async (
 //   } catch (err: any) {
 //     throw err;
 //   }
+
+export const deleteConversation = async (
+  senderId: string,
+  receiverId: string
+) => {
+  try {
+    console.log("Deleting conversation between", senderId, "and", receiverId);
+    const conversation = await dbRun(
+      `
+      DELETE FROM conversations
+      WHERE id IN (
+        SELECT DISTINCT conversation_id
+        FROM messages
+        WHERE (sender_id = ? AND receiver_id = ?) OR (receiver_id = ? AND sender_id = ?)
+      )
+    `,
+      [senderId, receiverId, senderId, receiverId]
+    );
+    return conversation;
+  } catch (err: any) {
+    throw err;
+  }
+};

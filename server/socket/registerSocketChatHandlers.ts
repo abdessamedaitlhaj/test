@@ -79,8 +79,14 @@ export const registerSocketChatHandlers = (
           content: payload.content,
         });
 
-        app.io.to(senderId).emit("receive_message", newMessage);
-        app.io.to(String(receiverId)).emit("receive_message", newMessage);
+        const sender = await FindById(String(senderId));
+
+        const receiverData = {
+          newMessage,
+          sender
+        }
+        app.io.to(senderId).emit("receive_message", receiverData);
+        app.io.to(String(receiverId)).emit("receive_message", receiverData);
       } catch (e: any) {
         socket.emit("error", `Failed to send message: ${e.message}`);
       }

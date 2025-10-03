@@ -10,13 +10,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { queryClient } from "@/App";
 import { useChatUsers } from "@/store/useChatUsers";
 
-
 export const ChatPage = () => {
   const { selectedUser, socket, unreadCounts, setChatUsers } = useStore();
   const { state } = useAuth();
   const [isTyping, setTyping] = useState(false);
   const [isBlocked, setBlocked] = useState(false);
   const [startedSince, setStartedSince] = useState<Date | null>(null);
+  const [typedUserId, setTypedUserId] = useState<number | null>(null);
+  const [deleteChat, setDeleteChat] = useState(false);
 
   const {
     data,
@@ -50,7 +51,25 @@ export const ChatPage = () => {
     };
     checkBlockedStatus();
     queryClient.invalidateQueries({ queryKey: ["chatUsers"] });
-    setTyping(false);
+
+    socket.on("typing", (sid) => {
+      setTypedUserId(sid);
+      if (String(sid) === String(selectedUser.id)) setTyping(true);
+    });
+  
+    socket.on("stop_typing", (sid) => {
+      setTypedUserId(null);
+      setTyping(false);
+    });
+
+    if (String(typedUserId) !== String(selectedUser.id)) {
+      setTyping(false);
+    }
+
+    return () => {
+      socket.off("typing");
+      socket.off("stop_typing");
+    };
   }, [selectedUser]);
 
   useEffect(() => {
@@ -59,7 +78,6 @@ export const ChatPage = () => {
   }, [isBlocked]);
 
   useEffect(() => {
-
     socket.on("refresh_chat_users", (u) => {
       queryClient.invalidateQueries({ queryKey: ["chatUsers"] });
     });
@@ -80,12 +98,17 @@ export const ChatPage = () => {
           isError,
           error,
         }}
+        typedUserId={typedUserId}
       />
       <div className="flex-1 bg-gray_3/80 rounded-[27px] flex flex-col w-[695px] h-[829px]">
         {selectedUser ? (
           <>
             <ChatMenu isBlocked={isBlocked} setBlocked={setBlocked} />
-            <ChatArea isBlocked={isBlocked} setStartedSince={setStartedSince} />
+            <ChatArea
+              isBlocked={isBlocked}
+              setStartedSince={setStartedSince}
+              isTyping={isTyping}
+            />
           </>
         ) : (
           <div className="flex flex-col gap-4 items-center justify-center h-full">
@@ -95,8 +118,7 @@ export const ChatPage = () => {
         )}
       </div>
       <ChatRightSidebar startedSince={startedSince} />
-      <div>
-      </div>
+      <div></div>
     </div>
   );
 };

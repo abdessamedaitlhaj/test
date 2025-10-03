@@ -1,14 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useStore } from "@/store/useStore";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import api from "@/utils/Axios";
 import { useAuth } from "@/hooks/useAuth";
 import menu from "../../../public/assests/menu.png";
+import { queryClient } from "@/App";
+import { DeleteConvToast } from "@/utils/deleteConvToast";
 
 export const ChatMenu = ({ isBlocked, setBlocked }) => {
   const [isToggle, setToggle] = useState(false);
-  const { selectedUser, user } = useStore();
-  const { state } = useAuth();
+  const { selectedUser, user, setSelectedUser } = useStore();
   const [isLoading, setLoading] = useState(false);
   // const [isBlocked, setBlocked] = useState(false);
 
@@ -17,6 +18,7 @@ export const ChatMenu = ({ isBlocked, setBlocked }) => {
   const ensureJoined = useStore((state) => state.ensureJoined);
   const socket = useStore((state) => state.socket); // Use socket from store
   const menuRef = useRef<HTMLDivElement>(null);
+  const [undo, setUndo] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -68,7 +70,10 @@ export const ChatMenu = ({ isBlocked, setBlocked }) => {
       setLoading(false);
       if (res.status === 200) {
         setBlocked(true);
-        socket.emit("block_user", { userId: user.id, blockedId: selectedUser.id });
+        socket.emit("block_user", {
+          userId: user.id,
+          blockedId: selectedUser.id,
+        });
       }
     } catch (error) {
       console.error("Error blocking user:", error);
@@ -78,17 +83,20 @@ export const ChatMenu = ({ isBlocked, setBlocked }) => {
     }
     setToggle(!isToggle);
   };
-  
+
   const unblockUser = async () => {
     setLoading(true);
-    
+
     try {
       const res = await api.post(`/users/unblock/${selectedUser.id}`);
       setLoading(false);
       if (res.status === 200) {
         toast.success(`User ${selectedUser.username} unblocked successfully`);
         setBlocked(false);
-        socket.emit("unblock_user", { userId: user.id, blockedId: selectedUser.id });
+        socket.emit("unblock_user", {
+          userId: user.id,
+          blockedId: selectedUser.id,
+        });
       }
     } catch (error) {
       console.error("Error unblocking user:", error);
@@ -99,6 +107,35 @@ export const ChatMenu = ({ isBlocked, setBlocked }) => {
     setToggle(!isToggle);
   };
 
+    const notify = (setUndo: boolean) => {
+      toast(({ closeToast }) => <DeleteConvToast setUndo={setUndo}  closeToast={closeToast} />, {
+        className: "bg-gray_2 text-white",
+      });
+    };
+
+  const onDeleteChat = () => {
+
+    try {
+      notify(setUndo);
+      if (undo) {
+        return;
+      }
+      const res = api.delete(`/chat/${selectedUser.id}`);
+      setToggle(!isToggle);
+      setTimeout(() => {
+      queryClient.invalidateQueries({ queryKey: ["chatUsers"] });
+      queryClient.invalidateQueries({ queryKey: ["messages"] });
+      setSelectedUser(null);
+    }, 1000);
+    } catch (error) {
+      console.error("Error deleting chat:", error);
+      toast.error("Failed to delete chat");
+      return;
+    }
+  }
+
+
+
   return (
     <>
       <div ref={menuRef} className="relative flex-shrink-0 mt-4">
@@ -108,7 +145,7 @@ export const ChatMenu = ({ isBlocked, setBlocked }) => {
               {selectedUser?.username}
             </span>
           </div>
-          <div className="absolute right-10 flex items-center">
+          <div className="absolute right-10 flex items-center justify-center size-[42px] rounded-full hover:bg-gray_1">
             <button onClick={() => setToggle(!isToggle)}>
               <img src={menu} alt="menu" className="w-[33px] h-[33px]" />
             </button>
@@ -117,30 +154,35 @@ export const ChatMenu = ({ isBlocked, setBlocked }) => {
         <hr className="border-t-1 mt-4 border-white [695px] h-[0px]" />
 
         {isToggle && (
-          <div className="absolute right-12 top-8 bg-gray_3 flex z-40 rounded-[12px] w-[164px] h-[92px]">
+          <div className="absolute right-12 top-8 bg-gray_3 flex z-40 rounded-[12px] w-[164px] h-[138px]">
             <div className="flex flex-col items-center justify-center w-full">
               <div className="flex items-center h-full justify-center hover:bg-gray_1 hover:rounded-t-[12px] w-full">
                 <button onClick={gameInvite}>
-                  <ToastContainer />
-
-                  <span className="  text-base  ">Play</span>
+                  <span className="text-base">Play</span>
                 </button>
               </div>
               <hr className="border-t-1 border-white w-[163px] h[0px]" />
-              <div className="flex items-center h-full justify-center hover:bg-gray_1 hover:rounded-b-[12px] w-full">
+              <div className="flex items-center text-base h-full justify-center hover:bg-gray_1 w-full">
                 {isLoading ? (
                   <div className="py-3 w-full flex items-center justify-center">
                     <div className="animate-spin rounded-full size-6 border-4 border-white/70 border-t-transparent"></div>
                   </div>
                 ) : isBlocked ? (
                   <button onClick={unblockUser}>
-                    <span className="  text-base  ">Unblock</span>
+                    <span>Unblock</span>
                   </button>
                 ) : (
                   <button onClick={blockUser}>
-                    <span className="  text-base  ">Block</span>
+                    <span>Block</span>
                   </button>
                 )}
+              </div>
+              <hr className="border-t-1 border-white w-[163px] h[0px]" />
+
+              <div className="flex items-center h-full justify-center hover:bg-gray_1 hover:rounded-b-[12px] w-full">
+                <button onClick={() => onDeleteChat()}>
+                  <span className="text-base">Delete</span>
+                </button>
               </div>
             </div>
           </div>

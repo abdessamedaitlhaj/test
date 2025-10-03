@@ -162,69 +162,178 @@ export const selectChatUsers = async (
   try {
     const users = await dbAll<User>(
       `
-      SELECT
-          DISTINCT u.id,
-          u.username,
-          u.avatarurl,
-          u.status,
-          u.last_seen,
-          (
-              SELECT COUNT(*)
-              FROM messages m
-              WHERE m.sender_id != ?
-              AND m.conversation_id = cp.conversation_id
-              AND m.timestamp > cp.last_read_message
-          ) AS unread_count,
-          (
-              SELECT m.content
-              FROM messages m
-              WHERE m.conversation_id = cp.conversation_id
-              ORDER BY m.timestamp DESC
-              LIMIT 1
-          ) AS last_message_content,
-           (
-               SELECT m.sender_id
-               FROM messages m
-               WHERE m.conversation_id = cp.conversation_id
-               ORDER BY m.timestamp DESC
-               LIMIT 1
-           ) AS last_message_sender_id,
-          (
-              SELECT m.timestamp
-              FROM messages m
-              WHERE m.conversation_id = cp.conversation_id
-              ORDER BY m.timestamp DESC
-              LIMIT 1
-          ) AS last_message_timestamp,
-          CASE
-              WHEN b.blocked_user IS NOT NULL THEN TRUE
-              ELSE FALSE
-          END AS is_blocked_by_me
-      FROM
-          users u
-      JOIN
-          conversation_participants cp ON u.id = cp.user_id
-      LEFT JOIN
-          blocked_users b ON u.id = b.blocked_user AND b.blocker_user = ?
-      WHERE
-          cp.conversation_id IN (
-              SELECT conversation_id
-              FROM conversation_participants
-              WHERE user_id = ?
-          )
-          AND u.id != ?
-      ORDER BY
-          last_message_timestamp DESC,
-          u.username ASC
+      SELECT DISTINCT
+    u.id,
+    u.username,
+    u.avatarurl,
+    u.status,
+    u.last_seen,
+    f.requester_id,
+    f.receiver_id,
+    f.status,
+    cp.conversation_id,
+    b.blocked_user,
+    b.blocker_user,
+    (
+        SELECT
+            COUNT(*)
+        FROM
+            messages m
+        WHERE
+            m.sender_id != ?
+            AND m.conversation_id = cp.conversation_id
+            AND m.timestamp > cp.last_read_message
+    ) AS unread_count,
+    (
+        SELECT
+            m.content
+        FROM
+            messages m
+        WHERE
+            m.conversation_id = cp.conversation_id
+        ORDER BY
+            m.timestamp DESC
+        LIMIT
+            1
+    ) AS last_message_content,
+    (
+        SELECT
+            m.sender_id
+        FROM
+            messages m
+        WHERE
+            m.conversation_id = cp.conversation_id
+        ORDER BY
+            m.timestamp DESC
+        LIMIT
+            1
+    ) AS last_message_sender_id,
+    (
+        SELECT
+            m.timestamp
+        FROM
+            messages m
+        WHERE
+            m.conversation_id = cp.conversation_id
+        ORDER BY
+            m.timestamp DESC
+        LIMIT
+            1
+    ) AS last_message_timestamp,
+    CASE
+        WHEN b.blocked_user IS NOT NULL THEN TRUE
+        ELSE FALSE
+    END AS is_blocked_by_me
+FROM
+    users u
+    LEFT JOIN blocked_users b ON u.id = b.blocked_user
+    AND b.blocker_user = ?
+    LEFT JOIN friendships f ON (
+        (
+            f.requester_id = u.id
+            AND f.receiver_id = ?
+        )
+        OR (
+            f.receiver_id = u.id
+            AND f.requester_id = ?
+        )
+    )
+    LEFT JOIN conversation_participants cp ON u.id = cp.user_id
+WHERE
+    cp.conversation_id IN (
+        SELECT
+            conversation_id
+        FROM
+            conversation_participants
+        WHERE
+            user_id = ?
+    )
+    AND
+    u.id != ?
+    AND f.status = 'accepted'
+ORDER BY
+    last_message_timestamp DESC
       LIMIT ? OFFSET ?;
 		  `,
-      [id, id, id, id, limit, offset]
+      [id, id, id, id, id, id, limit, offset]
     );
     return users;
   } catch (error) {
     throw error;
   }
 };
+// export const selectChatUsers = async (
+//   id: string,
+//   limit: number,
+//   offset: number
+// ): Promise<User[]> => {
+//   try {
+//     const users = await dbAll<User>(
+//       `
+//       SELECT
+//           DISTINCT u.id,
+//           u.username,
+//           u.avatarurl,
+//           u.status,
+//           u.last_seen,
+//           (
+//               SELECT COUNT(*)
+//               FROM messages m
+//               WHERE m.sender_id != ?
+//               AND m.conversation_id = cp.conversation_id
+//               AND m.timestamp > cp.last_read_message
+//           ) AS unread_count,
+//           (
+//               SELECT m.content
+//               FROM messages m
+//               WHERE m.conversation_id = cp.conversation_id
+//               ORDER BY m.timestamp DESC
+//               LIMIT 1
+//           ) AS last_message_content,
+//            (
+//                SELECT m.sender_id
+//                FROM messages m
+//                WHERE m.conversation_id = cp.conversation_id
+//                ORDER BY m.timestamp DESC
+//                LIMIT 1
+//            ) AS last_message_sender_id,
+//           (
+//               SELECT m.timestamp
+//               FROM messages m
+//               WHERE m.conversation_id = cp.conversation_id
+//               ORDER BY m.timestamp DESC
+//               LIMIT 1
+//           ) AS last_message_timestamp,
+//           CASE
+//               WHEN b.blocked_user IS NOT NULL THEN TRUE
+//               ELSE FALSE
+//           END AS is_blocked_by_me
+//       FROM
+//           users u
+//       JOIN
+//           conversation_participants cp ON u.id = cp.user_id
+//       LEFT JOIN
+//           blocked_users b ON u.id = b.blocked_user AND b.blocker_user = ?
+//       LEFT JOIN
+//           friendships f ON (f.requester_id = ? AND f.receiver_id = u.id) OR (f.requester_id = u.id AND f.receiver_id = ?)
+//       WHERE
+//           cp.conversation_id IN (
+//               SELECT conversation_id
+//               FROM conversation_participants
+//               WHERE user_id = ?
+//           )
+//           AND u.id != ?
+//       ORDER BY
+//           last_message_timestamp DESC
+//       LIMIT ? OFFSET ?;
+// 		  `,
+//       [id, id, id, id, id, id, limit, offset]
+//     );
+//     return users;
+//   } catch (error) {
+//     throw error;
+//   }
+// };
 
 export const updateUserStatus = async (
   userId: string,
@@ -243,48 +352,41 @@ export const updateUserStatus = async (
 
 export const selectSearchChatUsers = async (
   id: string,
-  username: string,
+  username: string
 ): Promise<User[]> => {
-
   const search = `%${username}%`;
-
 
   try {
     const users = await dbAll<User>(
       `
-      SELECT
-          DISTINCT u.id,
-          u.username,
-          u.avatarurl,
-          u.status,
-          u.last_seen,
-          (
-              SELECT COUNT(*)
-              FROM messages m
-              WHERE m.sender_id != ?
-              AND m.conversation_id = cp.conversation_id
-              AND m.timestamp > cp.last_read_message
-          ) AS unread_count,
-          CASE
-              WHEN b.blocked_user IS NOT NULL THEN TRUE
-              ELSE FALSE
-          END AS is_blocked_by_me
-      FROM
-          users u
-      JOIN
-          conversation_participants cp ON u.id = cp.user_id
-      LEFT JOIN
-          blocked_users b ON u.id = b.blocked_user AND b.blocker_user = ?
-      WHERE
-          cp.conversation_id IN (
-              SELECT conversation_id
-              FROM conversation_participants
-              WHERE user_id = ?
-          )
-          AND u.id != ?
-          AND u.username LIKE ?
-      ORDER BY
-          u.username ASC
+      SELECT DISTINCT
+    u.id,
+    u.username,
+    u.avatarurl,
+    u.status,
+    u.last_seen,
+    CASE
+        WHEN b.blocked_user IS NOT NULL THEN TRUE
+        ELSE FALSE
+    END AS is_blocked_by_me
+    FROM
+        users u
+        LEFT JOIN blocked_users b ON u.id = b.blocked_user
+        AND b.blocker_user = ?
+        LEFT JOIN friendships f ON (
+            (
+                f.requester_id = u.id
+                AND f.receiver_id = ?
+            )
+            OR (
+                f.receiver_id = u.id
+                AND f.requester_id = ?
+            )
+        )
+    WHERE
+        u.id != ?
+        AND f.status = 'accepted'
+        AND u.username LIKE ?
       `,
       [id, id, id, id, search]
     );

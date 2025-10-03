@@ -7,7 +7,7 @@ import { MessageCircleWarning, Users } from "lucide-react";
 import { formatStartedSince } from "@/utils/chat/FormatStartedChatTime";
 
 export const ChatRightSidebar = ({ startedSince }) => {
-  const { selectedUser } = useStore();
+  const { selectedUser, setSelectedUser } = useStore();
   const {
     data,
     fetchNextPage,
@@ -61,7 +61,7 @@ export const ChatRightSidebar = ({ startedSince }) => {
             <Link to="/prof">
               <button>
                 <span className=" text-[16px] w-115px] h-[19px]">
-                  Profile
+                  Profile Link
                 </span>
               </button>
             </Link>
@@ -84,7 +84,7 @@ export const ChatRightSidebar = ({ startedSince }) => {
           <>
             <div className="flex items-center justify-center mt-6 w-[209px] h-[24px]">
               <span className=" text-[20px]    ">
-                <span className="text-yellow_4">23</span> online friends
+                <span className="text-yellow_4">{ allFriends[0].online_friends }</span> online friends
               </span>
             </div>
 
@@ -94,20 +94,23 @@ export const ChatRightSidebar = ({ startedSince }) => {
                   <div
                     onClick={() => setSelectedUser(friend)}
                     key={friend.id}
-                    className={`flex items-center justify-around rounded-[15px] hover:bg-gray_1 transition-colors cursor-pointer h-[75px] ${
+                    className={`relative flex items-center rounded-[15px] hover:bg-gray_1 transition-colors cursor-pointer h-[75px] ${
                       selectedUser?.id === friend.id && "bg-gray_1"
                     }`}
                   >
-                    <img
-                      src={friend.avatarurl}
-                      className="rounded-full size-[50px]"
-                      alt={friend.username}
-                    />
-                    <div className="w-[120px] h-[19px]">
-                      <span className="block text-[16px] truncate">
-                        {friend.username}
-                      </span>
+                    <div className="flex items-center gap-4 pl-4">
+                      <img
+                        src={friend.avatarurl}
+                        className="rounded-full size-[50px]"
+                        alt={friend.username}
+                      />
+                      <div className="w-[120px] h-[19px]">
+                        <span className="block text-[16px] truncate">
+                          {friend.username}
+                        </span>
+                      </div>
                     </div>
+                    <div className="absolute size-[15px] rounded-full bg-green-500 bottom-2 left-12 border-[2px] border-gray_3" />
                   </div>
                 ))}
               </div>

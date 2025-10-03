@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { useStore } from "../../store/useStore";
-import { useChatUsers } from "../../store/useChatUsers";
 import { queryClient } from "@/App";
-import { Ban, MessageCircleWarning, Search, Users } from "lucide-react";
-import { selectChatUsers } from "server/models/Users";
-import api from "@/utils/Axios";
+import { Ban, MessageCircleWarning } from "lucide-react";
 import { timeFormat } from "@/utils/chat/TimeFormat";
+import { ChatSearch } from "./ChatSearch";
+import { AnimatePresence, motion } from "motion/react";
 
 interface User {
   id: number;
@@ -26,27 +25,13 @@ interface dataProps {
 
 export const ChatLeftSidebar = ({
   chatUsersData,
+  typedUserId,
 }: {
   chatUsersData: dataProps;
+  typedUserId: number;
 }) => {
-  const {
-    user,
-    chatUsers,
-    setChatUsers,
-    updateUser,
-    selectedUser,
-    setOnlineUsers,
-    setSelectedUser,
-    socket,
-    onlineUsers,
-    unreadCounts,
-    conversationOrder,
-    conversation,
-  } = useStore();
-  const [loadedChatUsers, setLoadedChatUsers] = useState([]);
-  const [isLoadingChatUsers, setIsLoadingChatUsers] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-  const searchChatRef = useRef<HTMLDivElement>(null);
+  const { user, chatUsers, updateUser, selectedUser, setSelectedUser, socket } =
+    useStore();
 
   useEffect(() => {
     const currentSelectedUser = localStorage.getItem("selectedUser");
@@ -56,7 +41,7 @@ export const ChatLeftSidebar = ({
         setSelectedUser(parsedUser);
       }
     }
-  }, [setSelectedUser]);
+  }, []);
 
   const filteredUsers = chatUsers?.filter(
     (u) => String(u.id) !== String(user?.id)
@@ -97,130 +82,16 @@ export const ChatLeftSidebar = ({
     };
   }, [socket]);
 
-  const searchByUsername = async (username: string) => {
-    try {
-      setIsLoadingChatUsers(true);
-      const { data } = await api.get(`/users/searchChatUsers?srch=${username}`);
-      console.log("Search Results:", data.users);
-      setIsLoadingChatUsers(false);
-      setLoadedChatUsers(data.users);
-    } catch (err: any) {
-      setIsLoadingChatUsers(false);
-      setLoadedChatUsers([]);
-    }
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value !== "") {
-      setCollapsed(true);
-      const searchTerm = e.target.value.toLowerCase();
-      searchByUsername(searchTerm);
-    } else {
-      setCollapsed(false);
-      setLoadedChatUsers([]);
-    }
-  };
-
-  const handleSelectedUser = (user) => {
-    setSelectedUser(user);
-    setLoadedChatUsers([]);
-    setCollapsed(false);
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        searchChatRef.current &&
-        !searchChatRef.current.contains(event.target as Node)
-      ) {
-        setCollapsed(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [searchChatRef]);
-
   return (
     <div className="flex flex-col w-[272px] h-[829px]">
-      <div className="relative bg-gray_2 rounded-[10px]  ">
-        <div className="relative flex w-full items-center p-2">
-          <Search className="absolute left-2 text-white h-5 w-5" />
-          <input
-            onChange={handleSearch}
-            type="text"
-            placeholder="search"
-            className="placeholder-white w-full pl-8 pr-2 py-1 text-sm focus:outline-none bg-transparent"
-          />
-        </div>
-        {collapsed && (
-          <div
-            ref={searchChatRef}
-            className="absolute bg-gray_2 shrink-0 flex flex-col text-white text-sm w-full  max-h-[300px] rounded-[10px] overflow-auto scrollbar-hidden items-center mt-2"
-          >
-            {isLoadingChatUsers ? (
-              <div className="flex items-center justify-center h-full p-4">
-                <div className="animate-spin rounded-full size-8 border-4 border-white/70 border-t-transparent"></div>
-              </div>
-            ) : loadedChatUsers.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 h-full p-4">
-                <Users className="text-white/70" size={40} />
-                <span className="text-white/70  text-center text-[16px]">
-                  No user found!
-                </span>
-              </div>
-            ) : (
-              loadedChatUsers?.map((user: User, index: number) => {
-                return (
-                  <div className="w-full" key={user.id}>
-                    <div
-                      onClick={() => handleSelectedUser(user)}
-                      className="flex shrink-0 items-center justify-around  hover:bg-gray_3  cursor-pointer w-full h-[60px]"
-                    >
-                      <img
-                        src={user?.avatarurl}
-                        alt="Profile"
-                        className="rounded-full size-[40px]"
-                      />
-                      <span className="block  w-[100px] text-start truncate">
-                        {user.username}
-                      </span>
-                      <div
-                        className={`flex items-center ${
-                          user.is_blocked_by_me === 1
-                            ? "justify-between"
-                            : "justify-end"
-                        } gap-2 w-[50px]`}
-                      >
-                        {user.status === "online" ? (
-                          <span className="size-[10px] bg-green-500 rounded-full"></span>
-                        ) : (
-                          <span className="text-[10px]">
-                            {timeFormat(user.last_seen)}
-                          </span>
-                        )}
-                        {user.is_blocked_by_me === 1 && (
-                          <Ban size={20} className="text-red-500/80 m-0" />
-                        )}
-                      </div>
-                    </div>
-                    {index !== loadedChatUsers.length - 1 && <hr className="border-t border-white/10 bottom-0" />}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        )}
-      </div>
+      <ChatSearch />
 
-      <div className="bg-gray_3/80 rounded-[20px] overflow-y-auto scrollbar-hidden mt-[21px] h-full ">
+      <div className="flex items-center bg-gray_3/80 rounded-[20px] overflow-y-auto scrollbar-hidden mt-[21px] h-[764px]  ">
         <div
-          className={`flex flex-col w-full my-8 ${
+          className={`flex flex-col w-full mt-8  ${
             chatUsersData.isLoading || chatUsersData.isError
-              ? "items-center justify-center h-full"
-              : ""
+              ? "items-center justify-center"
+              : "h-full"
           }`}
         >
           {chatUsersData.isError ? (
@@ -228,7 +99,7 @@ export const ChatLeftSidebar = ({
               Error: {chatUsersData.error?.message}
             </div>
           ) : chatUsersData.isLoading ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex items-center justify-center h-full ">
               <div className="animate-spin rounded-full size-8 border-4 border-white/70 border-t-transparent"></div>
             </div>
           ) : filteredUsers.length === 0 ? (
@@ -239,13 +110,14 @@ export const ChatLeftSidebar = ({
               </span>
             </div>
           ) : (
-            filteredUsers?.map((user: User) => {
-              return (
-                <div
+            <AnimatePresence>
+              {filteredUsers?.map((user: User) => (
+                <motion.div
+                  key={user.id} 
+                  exit={{ opacity: 0 }} 
                   className={`flex items-center shrink-0 rounded-[20px] cursor-pointer transition-colors px-4 duration-200 hover:bg-gray_1 h-[88px]  ${
                     selectedUser?.id === user.id && "bg-gray_1"
                   }`}
-                  key={user.id}
                   onClick={() => setSelectedUser(user)}
                 >
                   <div className="flex items-center gap-2 w-full">
@@ -262,10 +134,15 @@ export const ChatLeftSidebar = ({
                       </div>
                       <div className="w-[120px] h-[18px]">
                         <span className="block text-white/80 truncate text-[12px]">
-                          {user.id === user.last_message_sender_id
-                            ? user.last_message_content ||
-                              `Say hello to ${user.username}`
-                            : `You : ${user.last_message_content}`}
+                          {typedUserId && String(user?.id) === String(typedUserId) ? (
+                            <span className="block text-yellow_4 truncate text-[12px]">
+                              typing...
+                            </span>
+                          ) : user.id === user.last_message_sender_id ? (
+                            `${user.last_message_content}`
+                          ) : (
+                            `You : ${user.last_message_content}`
+                          )}
                         </span>
                       </div>
                     </div>
@@ -288,9 +165,7 @@ export const ChatLeftSidebar = ({
                           >
                             <span
                               className={`m-0 text-black  ${
-                                user.unread_count > 9
-                                  ? "text-[8px]"
-                                  : "text-[10px]"
+                                user.unread_count > 9 ? "text-[8px]" : "text-[10px]"
                               } font-bold`}
                             >
                               {user.unread_count > 9 ? "+9" : user.unread_count}
@@ -303,12 +178,12 @@ export const ChatLeftSidebar = ({
                       ) : null}
                     </div>
                   </div>
-                </div>
-              );
-            })
+                </motion.div>
+              ))}
+            </AnimatePresence>
           )}
           {chatUsersData.hasNextPage && (
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center p-3">
               <button
                 onClick={() => chatUsersData.fetchNextPage()}
                 disabled={chatUsersData.isFetchingNextPage}

@@ -38,7 +38,8 @@ export const blockUser = async (
       String(authenticatedUserId),
       String(userId)
     );
-    await removeFriendship(String(authenticatedUserId), String(userId));
+    // may be
+    // await removeFriendship(String(authenticatedUserId), String(userId));
 
   } catch (error) {
     return reply.status(500).send({ error: error });

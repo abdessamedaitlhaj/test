@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useStore } from "../../store/useStore";
-import { EllipsisVertical, MessageSquareLock } from "lucide-react";
+import { Check, CheckCheck, EllipsisVertical, MessageSquareLock } from "lucide-react";
 import { Input } from "./Input";
 import api from "@/utils/Axios";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,13 +8,16 @@ import { queryClient } from "@/App";
 import { useMessages } from "@/store/useMessages";
 import { toast } from "react-toastify";
 import { timeFormat } from "@/utils/chat/TimeFormat";
+import { PiCheckLight } from "react-icons/pi";
+import { PiChecksLight } from "react-icons/pi";
+import { all } from "axios";
 
-export const ChatArea = ({ isBlocked, setStartedSince }) => {
+
+export const ChatArea = ({ isBlocked, setStartedSince, isTyping }) => {
   const { socket, user, selectedUser, conversation }: any = useStore();
   const { state } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isBlockedByUser, setBlockedByUser] = useState(false);
-  const [isTyping, setTyping] = useState(false);
   const {
     data,
     hasNextPage,
@@ -26,6 +29,7 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
   } = useMessages(selectedUser ? String(selectedUser.id) : null);
   const [showSmallMenu, setShowSmallMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const typingRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -40,10 +44,16 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
     };
   }, [menuRef]);
 
+  useEffect(() => {
+    typingRef.current?.scrollIntoView({ behavior: "instant" });
+  }, [isTyping]);
+
   const filteredConversation = conversation?.filter(
     (msg) =>
-      String(msg.receiver_id) === String(selectedUser?.id) &&
-      String(msg.sender_id) === String(user?.id)
+      (String(msg.receiver_id) === String(selectedUser?.id) &&
+      String(msg.sender_id) === String(user?.id)) ||
+      (String(msg.sender_id) === String(selectedUser?.id) &&
+      String(msg.receiver_id) === String(user?.id))
   );
 
   const fetchedMessages = data?.pages.flat() || [];
@@ -55,8 +65,12 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
 
   useEffect(() => {
     if (!selectedUser) return;
+      const timer = setTimeout(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, 300);
   }, [selectedUser, conversation]);
+
+
 
   useEffect(() => {
     if (!socket || !user) {
@@ -80,14 +94,19 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
       }
     );
 
-    socket.on("typing", (sid) => {
-      if (String(sid) === String(selectedUser.id)) setTyping(true);
-    });
-    socket.on("stop_typing", (sid) => {
-      if (String(sid) === String(selectedUser.id)) setTyping(false);
-    });
+
+
+    // socket.on("message_read", (data: { messageId: number; readerId: string }) => {
+    //   if (String(data.readerId) === String(selectedUser?.id)) {
+    //     const updatedMessages = allMessages.map((msg) =>
+    //       msg.id === data.messageId ? { ...msg, read: true } : msg
+    //     );
+    //     queryClient.setQueryData(["messages", selectedUser?.id], updatedMessages);
+    //   }
+    // });
 
     const checkBlockedStatus = async () => {
+    
       try {
         const res = await api.get(`/users/blockReverse/${selectedUser?.id}`);
         if (res.data.blocked === true) {
@@ -104,10 +123,9 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
     queryClient.invalidateQueries({ queryKey: ["messages"] });
 
     return () => {
-      socket.off("typing");
-      socket.off("stop_typing");
       socket.off("user_blocked");
       socket.off("user_unblocked");
+      socket.off("message_read");
     };
   }, [socket, user, selectedUser]);
 
@@ -181,7 +199,7 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
                   alt={selectedUser.username}
                   className="rounded-full size-[90px] mb-4"
                 />
-                <h2 className="text-xl font-semibold text-white mb-2">
+                <h2 className="text-[20px] w-[400px] truncate text-center font-semibold text-white mb-2">
                   {selectedUser.username}
                 </h2>
                 <p className="text-white/70 text-sm">
@@ -195,10 +213,9 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
                 const isFromCurrentUser =
                   String(conv.sender_id) === String(user?.id);
 
-                const isFirstMessageFromSender =
-                  index === 0 ||
-                  String(allMessages[index - 1]?.sender_id) !==
-                    String(conv.sender_id);
+                const isLastMessageFromSender = 
+                index === allMessages.length - 1 ? String(user?.id) !== String(allMessages[index]?.sender_id) : false;
+
                 return (
                   <div
                     key={index}
@@ -208,7 +225,7 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
                   >
                     {!isFromCurrentUser && (
                       <div className="flex-shrink-0">
-                        {isFirstMessageFromSender ? (
+                        {isLastMessageFromSender ? (
                           <img
                             src={conv.avatarurl}
                             className="rounded-full size-[50px]"
@@ -219,19 +236,26 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
                       </div>
                     )}
                     <div
-                      className={`group relative max-w-[400px] rounded-[15px] p-3 ${
+                      className={`relative flex flex-col gap-1  max-w-[400px] rounded-[15px] p-3 ${
                         isFromCurrentUser
-                          ? "bg-receiver_text"
-                          : "bg-sender_text"
+                          ? "bg-sender_text"
+                          : "bg-receiver_text"
                       }`}
                     >
                       <span className="block text-[14px]  break-all">
                         {conv.content}
                       </span>
-                      <div className="flex justify-end">
+                      <div className="flex justify-end gap-1 items-center">
                         <span className="text-[10px] w-[32px] h-[13px] text-end">
                           {timeFormat(conv.timestamp)}
                         </span>
+                        <div className="flex">
+                          { isFromCurrentUser && (
+                          <div className="">
+                            <PiChecksLight strokeWidth={10} size={20} />
+                          </div>
+                        )}
+                        </div>
                       </div>
                     
                     </div>
@@ -239,7 +263,7 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
                 );
               })}
               {isTyping && (
-                <div className="flex space-x-1 pl-1 pt-6">
+                <div ref={typingRef} className="flex space-x-1 ml-[66px] mt-[16px]">
                   <span className="size-2 bg-white/50 rounded-full animate-bounce" />
                   <span
                     className="size-2 bg-white/50 rounded-full animate-bounce"
@@ -251,7 +275,7 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
                   />
                 </div>
               )}
-              <div ref={messagesEndRef} />
+              <div />
               {isBlocked ? (
                 <div className="flex-1 p-4">
                   <div className="flex flex-col items-center justify-end h-full text-white/50 text-sm">
@@ -272,7 +296,7 @@ export const ChatArea = ({ isBlocked, setStartedSince }) => {
                 )
               )}
             </div>
-            <div ref={messagesEndRef}></div>
+            <div ref={messagesEndRef} ></div>
           </div>
           <div className="relative flex items-center justify-center p-3">
             <Input disabled={isBlocked || isBlockedByUser} />

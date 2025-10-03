@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from "fastify";
-import { insertMessage, selectAllMessages } from "server/models/chat/Message";
+import { deleteConversation, insertMessage, selectAllMessages } from "server/models/chat/Message";
 import {
   insertConversationParticipant,
   insertLastRead,
@@ -188,5 +188,28 @@ export const addLastRead = async (
     const row = await insertLastRead(Number(conversationId), Number(userId));
   } catch (err: any) {
     throw err;
+  }
+};
+
+export const deleteChat = async (
+  request: FastifyRequest<{ Params: { userId: string } }>,
+  reply: FastifyReply
+) => {
+  const { userId } = request.params;
+  const authenticatedUserId = request.user_infos?.id;
+
+  if (!userId) {
+    return reply.status(400).send({ error: "Missing user ID" });
+  }
+
+  if (!authenticatedUserId) {
+    return reply.status(401).send({ error: "User not authenticated" });
+  }
+
+  try {
+    await deleteConversation(String(authenticatedUserId), String(userId));
+    reply.status(200).send({ message: "Chat deleted successfully" });
+  } catch (error) {
+    reply.status(500).send({ error: "Failed to delete chat" });
   }
 };

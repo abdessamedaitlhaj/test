@@ -12,5 +12,21 @@ export const db = new sqlite3.Database(dbPath, (err?: Error | null) => {
     console.error('❌ Database connection failed:', err.message);
   } else {
     console.log('✅ Connected to SQLite database');
+
+        db.run('PRAGMA foreign_keys = ON;', (pragmaErr) => {
+      if (pragmaErr) {
+        console.error('⚠️ Failed to enable foreign keys:', pragmaErr.message);
+      } else {
+        console.log('🔗 Foreign keys enabled');
+      }
+    });
+
+    db.get('PRAGMA foreign_keys;', (err, row) => {
+  if (err) {
+    console.error('Error checking foreign_keys pragma:', err);
+  } else {
+    console.log('Foreign keys enabled:', row['foreign_keys'] === 1);
+  }
+});
   }
 });

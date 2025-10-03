@@ -2,7 +2,7 @@ import "./global.css";
 
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import HomePage from "./pages/HomePage";
 import GamePage from "./pages/GamePage";
 import RemoteGamePage from "./pages/RemoteGamePage";
@@ -16,11 +16,11 @@ import TournamentPage from "./pages/TournamentPage";
 import RemoteSettingsPage from "./pages/RemoteSettingsPage";
 import PlayerStatsPage from "./pages/PlayerStatsPage";
 import MatchStatsPage from "./pages/MatchStatsPage";
-import TournamentListPage from "./pages/TournamentListPage";
 import AuthCliPage from "./pages/AuthCliPage";
+import {Test} from "./test";
+
 import { Layout } from "./components/Layout/Layout";
 
-// live chat imports
 import { toast, ToastContainer } from "react-toastify";
 import { ChatPage } from "@/pages/ChatPage";
 import { ContextProvider } from "./context/Context";
@@ -31,7 +31,8 @@ import "@/conf/i18n";
 import { useEffect, useState } from "react";
 import { useStore } from "./store/useStore";
 import { ProfilePage } from "./pages/ProfilePage";
-import api from "./utils/Axios";
+import { X } from "lucide-react";
+import { chatToast } from "./utils/chatToast";
 
 export const queryClient = new QueryClient();
 
@@ -45,8 +46,27 @@ interface Message {
   conversation_id: number;
 }
 
+interface User {
+  id: number;
+  username: string;
+  avatarurl: string;
+}
+
+  const CloseButton = ({ closeToast }) => (
+    <X size={20}
+    className="cursor-pointer text-[20px] font-bold"
+      onClick={closeToast}  strokeWidth={2}
+    />
+  );
+
+const notify = (sender: User, content: string) => {
+    toast(({ closeToast }) => <chatToast sender={sender} content={content}  closeToast={closeToast} />, {
+      className: "bg-gray_2 text-white",
+    });
+  };
+
 const App = () => {
-  const { socket, user, addMessage, selectedUser, chatUsers, setChatUsers } =
+  const { socket, user, addMessage, selectedUser, chatUsers } =
     useStore();
 
   useEffect(() => {
@@ -55,17 +75,21 @@ const App = () => {
       return;
     }
 
-    socket.on("receive_message", (msg: Message) => {
+    socket.on("receive_message", (receiverData) => {
+      if (String(receiverData.newMessage.receiver_id) === String(user?.id)) {
+
+        console.log("New message received for current user:", receiverData.newMessage);
+        notify(receiverData.sender, receiverData.newMessage.content);
+      }
       if (
-        (String(msg.sender_id) === String(user.id) &&
-          String(msg.receiver_id) === String(selectedUser?.id)) ||
-        (String(msg.receiver_id) === String(user.id) &&
-          String(msg.sender_id) === String(selectedUser?.id))
+        (String(receiverData.newMessage.sender_id) === String(user.id) &&
+          String(receiverData.newMessage.receiver_id) === String(selectedUser?.id)) ||
+        (String(receiverData.newMessage.receiver_id) === String(user.id) &&
+          String(receiverData.newMessage.sender_id) === String(selectedUser?.id))
       ) {
-        toast("New Message");
-        addMessage(msg);
-        if (!chatUsers.find((u) => String(u.id) === String(msg.sender_id))) {
-          socket.emit("refresh_chat_users", msg.receiver_id);
+        addMessage(receiverData.newMessage);
+        if (!chatUsers.find((u) => String(u.id) === String(receiverData.newMessage.sender_id))) {
+          socket.emit("refresh_chat_users", receiverData.newMessage.receiver_id);
         }
       }
     });
@@ -75,6 +99,10 @@ const App = () => {
     };
   }, [socket, user, selectedUser, addMessage]);
 
+
+
+
+
   return (
     <ContextProvider>
       <QueryClientProvider client={queryClient}>
@@ -83,6 +111,7 @@ const App = () => {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route element={<PersistLogin />}>
+                <Route path="/tesst" element={<Test />}/>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/play" element={<GamePage />} />
                 <Route path="/remote" element={<RemoteGamePage />} />
@@ -114,7 +143,7 @@ const App = () => {
           <InviteNotification />
           <TournamentInviteCards />
           <CliNavigator />
-          <ToastContainer position="top-right" autoClose={3000} />
+          <ToastContainer  position="top-right" autoClose={3000} limit={3} stacked closeButton={CloseButton}/>
         </BrowserRouter>
       </QueryClientProvider>
     </ContextProvider>

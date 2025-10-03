@@ -27,6 +27,13 @@
   background: linear-gradient(to right, #e21313, #820e0e);
 }
 
+.Toastify__close-button > svg {
+
+  color: green !important
+}
+
+
+
 
 /* global.css */
 body,
@@ -65,6 +72,11 @@ main {
    * A different format will require also updating the theme in tailwind.config.ts.
   */
   :root {
+    --toastify-toast-width: 330px;
+    --toastify-toast-max-height: 80px;
+      --toastify-color-progress-light: linear-gradient(to right, #ebca24, #857214);
+
+
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
